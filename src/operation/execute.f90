@@ -4,6 +4,7 @@ module command_m
     use value_base_m
     use namespace_m
     use error_m
+    use operation_database_m
     implicit none (type, external)
 
     integer, parameter :: ARG_UNINITIALIZED = 0, ARG_CONSTANT=1, ARG_REF=2, ARG_CALL=3
@@ -47,10 +48,6 @@ module command_m
         type(ast_symbol_ref_t) :: lhs
     end type
 
-    type operation_db_entry_t
-        class(operation_t), allocatable :: op
-        character(len=32) :: opname
-    end type
 
 contains
 
@@ -89,39 +86,12 @@ contains
         allocate(val_expr % op_call, source=callexpr)
     end function
 
-    subroutine fetch_op(opname, op, err)
-        !!      fetches an operation from the operation database based on its name
-        use operation_add_m
-        use operation_square_m
-        use operation_multiply_m
-        use operation_power_m
-        use operation_mksequence_m
-        
-        character(len=*), intent(in) :: opname !! operation name
-        class(operation_t), intent(out), allocatable :: op !! allocatable operation
-        type(err_t), intent(out), optional :: err !! error object
 
-        ! this is only for demonstration, a proper operation database is coming
-        select case(opname)
-          case ("add")
-            allocate(op, source=add_t())
-          case ("squared")
-            allocate(op, source=square_t())
-          case ("mul", "multiply")
-            allocate(op, source=multiply_t())
-          case ("pow", "power")
-            allocate(op, source=op_pow_t())
-          case ("array", "arr", "seq")
-            allocate(op, source=op_mkseq_t())
-          case default
-            call seterr(err, "uknown oepration " // opname)
-        end select
-    end subroutine
-
-    recursive subroutine evaluate_expression(val_expr, result_value, namespace, err)
+    recursive subroutine evaluate_expression(val_expr, result_value, namespace, operation_db, err)
         type(ast_expression_t), intent(in) :: val_expr
-        type(namespace_t), intent(inout) :: namespace
+        type(namespace_t), intent(in), optional :: namespace
         class(value_t), allocatable :: result_value
+        type(operation_db_t), intent(in), optional :: operation_db
         type(err_t), intent(out), optional :: err
 
         select case(val_expr % argtype)
@@ -129,6 +99,9 @@ contains
             result_value = val_expr % constant
           case (ARG_REF)
             associate (refname => val_expr % reference % refname)
+                if (.not. present(namespace)) then
+                    error stop "no namespace provided so reference cannot be resolved: " // trim(refname)
+                end if
                 call namespace % fetch(refname, result_value, err)
                 if (check(err)) return
             end associate
@@ -140,9 +113,13 @@ contains
                     integer :: i, nr_args
 
                     if (allocated(op_call%op)) then
-                        op = op_call%op
+                        ! sometimes in testing/debugging we might use allocated operations
+                        allocate(op, source=op_call%op)
                     else
-                        call fetch_op(op_call%opname, op, err)
+                        if (.not. present(operation_db)) then
+                            error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
+                        end if
+                        call fetch_operation(operation_db, op_call%opname, op, err)
                         if (check(err)) return
                     end if
 
@@ -150,7 +127,7 @@ contains
 
                     allocate(arg_values(nr_args))
                     do i = 1, nr_args
-                        call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, err)
+                        call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
                         if (check(err)) return
                     end do
 
@@ -164,5 +141,6 @@ contains
 
         print *, "evaluated ", result_value % get_trace(), " as ", result_value%to_str()
     end subroutine
+
 
 end module

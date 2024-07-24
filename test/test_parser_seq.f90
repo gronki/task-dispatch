@@ -4,6 +4,7 @@ program test_parser_seq
     use parser_m
     use command_m
     use namespace_m
+    use example_operations_m
 
     implicit none (type, external)
 
@@ -19,7 +20,7 @@ program test_parser_seq
 
     call tokenize_into_array(line, tokens)
     call parse_expression(tokens, expr)
-    call evaluate_expression(expr, retval%value, ns)
+    call evaluate_expression(expr, retval%value, ns, operation_db=get_example_operation_db())
 
     associate (val=>retval%value)
         print *, "RESULT ::::::::::::::: ", val%get_trace(), " = ", val%to_str()

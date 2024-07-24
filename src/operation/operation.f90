@@ -20,7 +20,7 @@ module operation_m
             type(value_item_t), intent(in) :: inputs(:)
             class(value_t), intent(out), allocatable :: output
         end subroutine
-        function opname_proto(op) result(name)
+        pure function opname_proto(op) result(name)
             import :: operation_t
             class(operation_t), intent(in) :: op
             character(len=32) :: name

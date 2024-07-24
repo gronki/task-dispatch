@@ -39,7 +39,7 @@ contains
         output_trace = "" // trim(inputs(1) % value % get_trace()) // "%pow(2)"
     end function
 
-    function squared_name(op) result(name)
+    pure function squared_name(op) result(name)
         class(square_t), intent(in) :: op
         character(len=32) :: name
 

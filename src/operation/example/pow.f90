@@ -43,7 +43,7 @@ contains
             // "%pow(" // trim(inputs(2) % value % get_trace())  // ")"
     end function
 
-    function powd_name(op) result(name)
+    pure function powd_name(op) result(name)
         class(op_pow_t), intent(in) :: op
         character(len=32) :: name
 

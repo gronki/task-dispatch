@@ -4,12 +4,13 @@ program test_parser
     use parser_m
     use command_m
     use namespace_m
+    use example_operations_m
 
     implicit none (type, external)
 
 
     character(len=*), parameter :: line = &
-        " multiply(squared(add(1,1))%pow(3), 0.25) "
+        " mull(squared(add(1,1))%pow(3), 0.25) "
     type(ast_expression_t) :: expr
     type(tok_array_t) :: tokens
     type(namespace_t) :: ns
@@ -19,7 +20,7 @@ program test_parser
 
     call tokenize_into_array(line, tokens)
     call parse_expression(tokens, expr)
-    call evaluate_expression(expr, retval%value, ns)
+    call evaluate_expression(expr, retval%value, namespace=ns, operation_db=get_example_operation_db())
 
     associate (val=>retval%value)
       print *, "RESULT ::::::::::::::: ", val%get_trace(), " = ", val%to_str()

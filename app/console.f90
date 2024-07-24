@@ -4,6 +4,8 @@ program test_console
     use parser_m
     use command_m
     use namespace_m
+    use operation_database_m
+    use example_operations_m
 
     character(len=4096) :: line
     type(ast_statement_t) :: stmt
@@ -11,7 +13,9 @@ program test_console
     type(value_item_t) :: retval
     type(err_t) :: err
     type(tok_array_t) :: tokens
+    type(operation_db_t) :: operation_db
 
+    operation_db = get_example_operation_db()
 
     do
         write (*, '(a)', advance='no') '> '
@@ -26,7 +30,7 @@ program test_console
             print *, err
             cycle
         end if 
-        call evaluate_expression(stmt%rhs, retval%value, ns, err)
+        call evaluate_expression(stmt%rhs, retval%value, ns, operation_db, err)
         if (check(err)) then
             print *, err
             cycle

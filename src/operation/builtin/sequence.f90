@@ -43,7 +43,7 @@ contains
 
     end function
 
-    function mkseqd_name(op) result(name)
+    pure function mkseqd_name(op) result(name)
         class(op_mkseq_t), intent(in) :: op
         character(len=32) :: name
 

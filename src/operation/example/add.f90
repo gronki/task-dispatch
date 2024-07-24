@@ -1,35 +1,35 @@
-module operation_multiply_m
+module operation_add_m
 
     use operation_m, only: operation_t, value_item_t
     use real_value_m
     implicit none (type, external)
 
-    type, extends(operation_t) :: multiply_t
+    type, extends(operation_t) :: add_t
     contains
-        procedure :: name => multiply_name
-        procedure :: exec => exec_multiply
+        procedure :: name => add_name
+        procedure :: exec => exec_add
     end type
 
 contains
 
-    subroutine exec_multiply(op, inputs, output)
-        class(multiply_t), intent(in) :: op
+    subroutine exec_add(op, inputs, output)
+        class(add_t), intent(in) :: op
         type(value_item_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer :: i
         type(real_value_t) :: result
 
         if (size(inputs) == 0) &
-            error stop "multiply: at least one argument required"
+            error stop "at least one argument required"
 
-        result % value = 1
+        result % value = 0
 
         do i = 1, size(inputs)
             select type (val => inputs(i) % value)
               type is (real_value_t)
-                result % value = result % value * val % value
+                result % value = result % value + val % value
               class default
-                error stop "multiply: unexpected input type"
+                error stop "add: unexpected input type"
             end select
         end do
 
@@ -37,11 +37,11 @@ contains
 
     end subroutine
 
-    function multiply_name(op) result(name)
-        class(multiply_t), intent(in) :: op
+    pure function add_name(op) result(name)
+        class(add_t), intent(in) :: op
         character(len=32) :: name
 
-        name = "mul"
+        name = "add"
     end function
 
 end module
