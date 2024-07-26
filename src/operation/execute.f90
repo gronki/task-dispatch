@@ -5,7 +5,10 @@ module command_m
     use namespace_m
     use error_m
     use operation_database_m
+    use tokenizer_m, only: token_loc_t
     implicit none (type, external)
+
+    private :: evaluate_operation_call
 
     integer, parameter :: ARG_UNINITIALIZED = 0, ARG_CONSTANT=1, ARG_REF=2, ARG_CALL=3
 
@@ -14,6 +17,7 @@ module command_m
         class(value_t), allocatable :: constant
         type(ast_symbol_ref_t), allocatable :: reference
         type(ast_operation_call_t), allocatable :: op_call
+        type(token_loc_t) :: loc
     end type
 
     interface ast_expression
@@ -48,55 +52,63 @@ module command_m
         type(ast_symbol_ref_t) :: lhs
     end type
 
-
 contains
 
-    function ast_expr_const(value) result(val_expr)
+    function ast_expr_const(value, loc) result(val_expr)
         class(value_t), intent(in) :: value
         type(ast_expression_t) :: val_expr
+        type(token_loc_t), intent(in), optional :: loc
 
         val_expr % argtype = ARG_CONSTANT
         allocate(val_expr % constant, source=value)
+        if (present(loc)) val_expr % loc = loc
     end function
 
-    function ast_expr_ref(reference) result(val_expr)
+    function ast_expr_ref(reference, loc) result(val_expr)
         type(ast_symbol_ref_t), intent(in) :: reference
         type(ast_expression_t) :: val_expr
+        type(token_loc_t), intent(in), optional :: loc
 
         val_expr % argtype = ARG_REF
         allocate(val_expr % reference, source=reference)
+        if (present(loc)) val_expr % loc = loc
     end function
 
-    function ast_expr_op_args(op, args) result(val_expr)
+    function ast_expr_op_args(op, args, loc) result(val_expr)
         class(operation_t), intent(in) :: op
         type(ast_expression_t), intent(in) :: args(:)
         type(ast_expression_t) :: val_expr
+        type(token_loc_t), intent(in), optional :: loc
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op_call)
         allocate(val_expr % op_call % op, source=op)
         allocate(val_expr % op_call % args, source=args)
+        if (present(loc)) val_expr % loc = loc
     end function
 
-    function ast_expr_call(callexpr) result(val_expr)
+    function ast_expr_call(callexpr, loc) result(val_expr)
         type(ast_operation_call_t) :: callexpr
         type(ast_expression_t) :: val_expr
+        type(token_loc_t), intent(in), optional :: loc
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op_call, source=callexpr)
+        if (present(loc)) val_expr % loc = loc
     end function
-
 
     recursive subroutine evaluate_expression(val_expr, result_value, namespace, operation_db, err)
         type(ast_expression_t), intent(in) :: val_expr
+        class(value_t), intent(inout), allocatable :: result_value
         type(namespace_t), intent(in), optional :: namespace
-        class(value_t), allocatable :: result_value
         type(operation_db_t), intent(in), optional :: operation_db
         type(err_t), intent(out), optional :: err
 
         select case(val_expr % argtype)
+
           case (ARG_CONSTANT)
             result_value = val_expr % constant
+
           case (ARG_REF)
             associate (refname => val_expr % reference % refname)
                 if (.not. present(namespace)) then
@@ -105,41 +117,76 @@ contains
                 call namespace % fetch(refname, result_value, err)
                 if (check(err)) return
             end associate
+
           case (ARG_CALL)
-            associate (op_call => val_expr%op_call)
-                block
-                    class(operation_t), allocatable :: op
-                    type(value_item_t), allocatable, target :: arg_values(:)
-                    integer :: i, nr_args
+            call evaluate_operation_call(val_expr%op_call, result_value, namespace, operation_db, err)
+            if (check(err)) return
 
-                    if (allocated(op_call%op)) then
-                        ! sometimes in testing/debugging we might use allocated operations
-                        allocate(op, source=op_call%op)
-                    else
-                        if (.not. present(operation_db)) then
-                            error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
-                        end if
-                        call fetch_operation(operation_db, op_call%opname, op, err)
-                        if (check(err)) return
-                    end if
-
-                    nr_args = size(op_call % args)
-
-                    allocate(arg_values(nr_args))
-                    do i = 1, nr_args
-                        call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
-                        if (check(err)) return
-                    end do
-
-                    ! here should be checked if this call result is already cached
-                    ! if not, execute the operation and cache the result
-                    call op % exec_trace(arg_values, result_value)
-                    ! call namespace % set_cached(result % value)
-                end block
-            end associate
+          case default
+            error stop
         end select
 
         print *, "evaluated ", result_value % get_trace(), " as ", result_value%to_str()
+    end subroutine
+
+
+    recursive subroutine evaluate_operation_call(op_call, result_value, namespace, operation_db, err)
+        type(ast_operation_call_t), intent(in) :: op_call
+        class(value_t), intent(inout), allocatable :: result_value
+        type(namespace_t), intent(in), optional :: namespace
+        type(operation_db_t), intent(in), optional :: operation_db
+        type(err_t), intent(out), optional :: err
+
+        class(operation_t), allocatable :: op
+        type(value_item_t), allocatable, target :: arg_values(:)
+        integer :: i, nr_args
+
+        if (allocated(op_call%op)) then
+            ! sometimes in testing/debugging we might use allocated operations
+            allocate(op, source=op_call%op)
+        else
+            if (.not. present(operation_db)) then
+                error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
+            end if
+            call fetch_operation(operation_db, op_call%opname, op, err)
+            if (check(err)) return
+        end if
+
+        nr_args = size(op_call % args)
+
+        allocate(arg_values(nr_args))
+        do i = 1, nr_args
+            call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
+            if (check(err)) return
+        end do
+
+        write (*,*) 'TRACE ', op%trace(arg_values)
+
+        ! here should be checked if this call result is already cached
+        ! if not, execute the operation and cache the result
+        call op % exec_trace(arg_values, result_value)
+        ! call namespace % set_cached(result % value)
+
+    end subroutine
+
+    subroutine execute_statement(stmt, result_value, namespace, operation_db, err)
+        type(ast_statement_t), intent(in) :: stmt
+        class(value_t), intent(inout), allocatable :: result_value
+        type(namespace_t), intent(inout), optional :: namespace
+        type(operation_db_t), intent(in), optional :: operation_db
+        type(err_t), intent(out), optional :: err
+
+        call evaluate_expression(stmt%rhs, result_value, namespace, operation_db, err)
+        if (check(err)) return
+
+        if (.not. stmt%is_assignment) return
+
+        if (.not. present(namespace)) then
+            error stop "namespace required for assignment statements"
+        end if
+
+        call namespace%push(trim(stmt%lhs%refname), result_value, err)
+
     end subroutine
 
 

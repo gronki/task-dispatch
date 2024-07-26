@@ -6,6 +6,8 @@ program test_command
     use operation_add_m
     implicit none (type, external)
 
+    print *, '*** TEST_COMMAND ***'
+
     call test_eval_namespace_fetch
     call test_eval_add
     call test_eval_add_fetch

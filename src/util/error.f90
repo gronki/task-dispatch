@@ -34,7 +34,6 @@ contains
 
     end function
 
-
     pure subroutine seterr(err, message)
         type(err_t), intent(inout), optional :: err
         character(len=*), intent(in) :: message
@@ -75,7 +74,7 @@ contains
         integer :: i
 
         if (check(err)) then
-            write(unit,'(i0,a,*(/,A))',iostat=iostat,iomsg=iomsg) err %num_errors, " error(s)", &
+            write(unit,'(i0,a,*(/"error: ",A,:))',iostat=iostat,iomsg=iomsg) err %num_errors, " error(s)", &
                 (trim(err%messages(i)%text), i=1, err%num_errors)
         else
             write(unit,'(A)',iostat=iostat,iomsg=iomsg) "no errors"

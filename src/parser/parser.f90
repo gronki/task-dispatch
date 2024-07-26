@@ -96,19 +96,19 @@ contains
     recursive subroutine parse_recursive(tokens, expr, err)
         type(tok_array_t), intent(inout) :: tokens
         type(ast_expression_t), intent(out) :: expr
-        type(token_t) :: token
-        character(len=:), allocatable :: ident_name
+        type(token_t) :: token, ident_token
         type(err_t), intent(out), optional :: err !! error object
 
         call get_current_token(tokens, token)
+
         if (token%type == token_num_literal) then
-            expr = ast_expression(real_value(token%value))
+            expr = ast_expression(real_value(token%value), loc=token%loc)
             call get_next_token(tokens)
             return
         end if
 
         if (token%type == token_str_literal) then
-            expr = ast_expression(str_value(token%value))
+            expr = ast_expression(str_value(token%value), loc=token%loc)
             call get_next_token(tokens)
             return
         end if
@@ -118,11 +118,11 @@ contains
             return
         end if
 
-        ident_name = token%value
+        ident_token = token
 
         call get_next_token(tokens, token)
         if (token /= token_t(type=token_delim, value="(")) then
-            expr = ast_expression(ast_symbol_ref_t(refname=ident_name))
+            expr = ast_expression(ast_symbol_ref_t(refname=ident_token%value), loc=ident_token%loc)
             return
         end if
 
@@ -132,7 +132,7 @@ contains
             integer, parameter :: max_args = 16
             integer :: num_args
 
-            opcall%opname = ident_name
+            opcall%opname = ident_token%value
             allocate(opcall%args(max_args), opcall%keys(max_args))
 
             num_args = 0
@@ -166,7 +166,7 @@ contains
             opcall%args = opcall%args(:num_args)
             opcall%keys = opcall%keys(:num_args)
 
-            expr = ast_expression(opcall)
+            expr = ast_expression(opcall, loc=ident_token%loc)
             return
 
         end block parse_function_call
@@ -201,7 +201,6 @@ contains
         call get_current_token(tokens, token3)
         if (token3 % type /= TOKEN_END) &
             call seterr(err, "End of line expected")
-
 
     end subroutine
 

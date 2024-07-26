@@ -13,6 +13,8 @@ program test_parse_statement
     implicit none (type, external)
 #   include "assert_macro.h"
 
+    print *, '*** TEST_PARSE_STATEMENT ***'
+
     block
         character(len=*), parameter :: line = "a = sum(c, 1)"
         type(tok_array_t) :: tokens
@@ -56,7 +58,7 @@ program test_parse_statement
         call parse_statement(tokens, stmt, err)
 
         call assertm(check(err))
-        print *, err
+        print '(/a/dt/a/)', '---\/ THIS ERROR IS DESIRED \/---', err, '---/\ THIS ERROR IS DESIRED /\---'
 
     end block
 

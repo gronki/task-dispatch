@@ -1,6 +1,7 @@
 module operation_m
 
     use value_base_m
+    use sequence_value_m
     use iso_fortran_env, only: debug_output => error_unit
     implicit none (type, external)
 
@@ -35,13 +36,10 @@ contains
         !! If your operation explicitly expects sequences
         !! as inputs (for example, to sum all arguments)
         !! you need to override this subroutine. 
-        use sequence_value_m
-        !> operation
-        class(operation_t), intent(in) :: op
-        !> operation inputs
-        type(value_item_t), intent(in) :: inputs(:)
-        !> output value
-        class(value_t), allocatable, intent(out) :: output
+        
+        class(operation_t), intent(in) :: op !! operation
+        type(value_item_t), intent(in) :: inputs(:) !! operation inputs
+        class(value_t), allocatable, intent(out) :: output !! output to be allocated
 
         type(value_item_t) :: temp_inputs(size(inputs))
         integer :: sequence_lengths(size(inputs))

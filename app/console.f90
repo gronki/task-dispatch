@@ -23,22 +23,19 @@ program test_console
         if (adjustl(line) == "exit") exit
         if (line == "") cycle
 
-
         call tokenize_into_array(trim(line), tokens)
         call parse_statement(tokens, stmt, err)
-        if (check(err)) then
-            print *, err
-            cycle
-        end if 
-        call evaluate_expression(stmt%rhs, retval%value, ns, operation_db, err)
+
         if (check(err)) then
             print *, err
             cycle
         end if 
 
-        if (stmt%is_assignment) then
-            call ns%push(trim(stmt%lhs%refname), retval%value)
-        end if
+        call execute_statement(stmt, retval%value, ns, operation_db, err)
+        if (check(err)) then
+            print *, err
+            cycle
+        end if 
 
         associate (val=>retval%value)
             print *, "RESULT ::::::::::::::: ", val%get_trace(), " = ", val%to_str()

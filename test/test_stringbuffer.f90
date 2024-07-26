@@ -6,6 +6,8 @@ program test_stringbuffer
 
     type(stringbuffer_t) :: sb
 
+    print *, '*** TEST_STRINGBUFFER ***'
+
     call sb%append("a")
     associate (s => sb%str())
         if (len(s) /= 1) error stop "len(s) /= 1"

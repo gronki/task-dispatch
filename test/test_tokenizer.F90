@@ -5,6 +5,8 @@ program test_tokenizer
 
     implicit none (type, external)
 
+    print *, '*** TEST_TOKENIZER ***'
+
     call test_token_equality
 
     call test1
