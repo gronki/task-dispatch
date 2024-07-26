@@ -10,7 +10,7 @@ module operation_database_m
         class(operation_t), allocatable :: op
     end type
 
-    integer, parameter :: OPERATION_DB_CAPACITY = 15
+    integer, parameter :: OPERATION_DB_CAPACITY = 128
 
     type operation_db_t
         type(operation_db_entry_t) :: db(OPERATION_DB_CAPACITY)
