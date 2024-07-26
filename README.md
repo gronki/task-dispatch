@@ -13,6 +13,8 @@ Should see ``>`` prompt.
 
 ## Examples
 
+Currently in the demo only ``add``, ``mul``, ``square``, ``pow`` and ``array`` are available. There are two data types: real numbers and ``"strings"``.
+
 ```
 > 2  
  evaluated 2 as 2.0000
