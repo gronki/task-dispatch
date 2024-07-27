@@ -109,6 +109,7 @@ contains
 
         if (token%type == token_str_literal) then
             expr = ast_expression(str_value(token%value), loc=token%loc)
+            expr % loc = token % loc ! why is this needed?
             call get_next_token(tokens)
             return
         end if
@@ -123,6 +124,7 @@ contains
         call get_next_token(tokens, token)
         if (token /= token_t(type=token_delim, value="(")) then
             expr = ast_expression(ast_symbol_ref_t(refname=ident_token%value), loc=ident_token%loc)
+            expr % loc = ident_token % loc ! why is this needed?
             return
         end if
 
@@ -167,6 +169,7 @@ contains
             opcall%keys = opcall%keys(:num_args)
 
             expr = ast_expression(opcall, loc=ident_token%loc)
+            expr % loc = ident_token % loc ! why is this needed?
             return
 
         end block parse_function_call

@@ -20,7 +20,9 @@ module tokenizer_m
         generic :: read(formatted) => token_loc_read_fmt
     end type
 
-    private :: token_loc_write_fmt, token_loc_read_fmt
+    character(len=*), parameter :: token_loc_fmt = '("L",i5.5,"C",i3.3)'
+    
+    private :: token_loc_write_fmt, token_loc_read_fmt, token_loc_fmt
 
     type, public :: token_t
         integer :: type = token_none
@@ -320,7 +322,7 @@ contains
         character(len=80) :: buffer
         integer :: i
 
-        write(unit, fmt='("L",i5.5,"C",i3.3)', iostat=iostat, iomsg=iomsg) &
+        write(unit, fmt=token_loc_fmt, iostat=iostat, iomsg=iomsg) &
             max(loc%line, 0), max(loc%offset, 0)
     end subroutine
 
@@ -334,7 +336,7 @@ contains
         character(len=80) :: buffer
         integer :: i
 
-        read(unit, fmt='("L",i5.5,"C",i3.3)', iostat=iostat, iomsg=iomsg) &
+        read(unit, fmt=token_loc_fmt, iostat=iostat, iomsg=iomsg) &
             loc%line, loc%offset
     end subroutine
 

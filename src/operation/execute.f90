@@ -57,8 +57,8 @@ contains
 
     function ast_expr_const(value, loc) result(val_expr)
         class(value_t), intent(in) :: value
-        type(ast_expression_t) :: val_expr
         type(token_loc_t), intent(in), optional :: loc
+        type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_CONSTANT
         allocate(val_expr % constant, source=value)
@@ -67,19 +67,20 @@ contains
 
     function ast_expr_ref(reference, loc) result(val_expr)
         type(ast_symbol_ref_t), intent(in) :: reference
-        type(ast_expression_t) :: val_expr
         type(token_loc_t), intent(in), optional :: loc
+        type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_REF
         allocate(val_expr % reference, source=reference)
         if (present(loc)) val_expr % loc = loc
+        print *, 'FIX1 ', val_expr % loc 
     end function
 
     function ast_expr_op_args(op, args, loc) result(val_expr)
         class(operation_t), intent(in) :: op
         type(ast_expression_t), intent(in) :: args(:)
-        type(ast_expression_t) :: val_expr
         type(token_loc_t), intent(in), optional :: loc
+        type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op_call)
@@ -90,8 +91,8 @@ contains
 
     function ast_expr_call(callexpr, loc) result(val_expr)
         type(ast_operation_call_t) :: callexpr
-        type(ast_expression_t) :: val_expr
         type(token_loc_t), intent(in), optional :: loc
+        type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op_call, source=callexpr)
@@ -117,7 +118,8 @@ contains
                 end if
                 call namespace % fetch(refname, result_value, err)
                 if (check(err)) then
-                    call seterr(err, "variable not found", loc=val_expr%loc)
+                    print *, val_expr%loc
+                    call seterr(err, "here", loc=val_expr%loc)
                     return
                 end if
             end associate
@@ -156,7 +158,7 @@ contains
                 end if
                 call fetch_operation(operation_db, op_call%opname, op, err)
                 if (check(err)) then
-                    call seterr(err, "unknown operation", val_expr%loc)
+                    call seterr(err, "here", val_expr%loc)
                     return
                 end if
             end if
