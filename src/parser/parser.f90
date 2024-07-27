@@ -5,6 +5,7 @@ module parser_m
     use str_value_m
     use real_value_m
     use error_m
+    use line_error_m
     implicit none (type, external)
 
 
@@ -17,7 +18,7 @@ contains
         type(ast_expression_t) :: child_expr
         type(token_t) :: token1, token2
         character(len=:), allocatable :: label_name
-        type(err_t), intent(out), optional :: err !! error object
+        class(err_t), intent(out), optional :: err !! error object
 
         call peek_token(tokens, 0, token1)
         call peek_token(tokens, 1, token2)
@@ -41,7 +42,7 @@ contains
         type(ast_expression_t), intent(out) :: expr
         type(ast_expression_t) :: child_expr
         type(token_t) :: token
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
         integer :: pivot
 
         call parse_recursive(tokens, expr, err)
@@ -54,15 +55,14 @@ contains
             child_expr = expr
 
             if (child_expr%argtype /= ARG_REF .and. child_expr%argtype /= ARG_CALL) then
-                print *, 'child_expr%argtype', child_expr%argtype
-                call seterr(err, "chaining only allowed on idents and function call results")
+                call seterr(err, "chaining only allowed on idents and function call results", child_expr%loc)
                 return
             end if
 
             call parse_recursive(tokens, expr, err)
 
             if (expr%argtype /= ARG_CALL) then
-                call seterr(err, "function call expected in chaining")
+                call seterr(err, "function call expected in chaining", expr%loc)
                 return
             end if
 
@@ -97,7 +97,7 @@ contains
         type(tok_array_t), intent(inout) :: tokens
         type(ast_expression_t), intent(out) :: expr
         type(token_t) :: token, ident_token
-        type(err_t), intent(out), optional :: err !! error object
+        class(err_t), intent(out), optional :: err !! error object
 
         call get_current_token(tokens, token)
 
@@ -114,7 +114,7 @@ contains
         end if
 
         if (token%type /= token_ident) then
-            call seterr(err, "identifier expected")
+            call seterr(err, "identifier expected", loc=token%loc)
             return
         end if
 
@@ -158,7 +158,7 @@ contains
                 end if
 
                 if (token /= token_t(type=token_delim, value=",")) then
-                    call seterr(err, "comma (,) expected")
+                    call seterr(err, "comma (,) expected", loc=token%loc)
                     return
                 end if
             end do iter_args
@@ -181,7 +181,7 @@ contains
 
         type(tok_array_t), intent(inout) :: tokens  !! Token array to process
         type(ast_statement_t), intent(out) :: statement !! Statement object
-        type(err_t), intent(out), optional :: err !! error object
+        class(err_t), intent(out), optional :: err !! error object
 
         type(token_t) :: token1, token2, token3
 
@@ -200,7 +200,7 @@ contains
 
         call get_current_token(tokens, token3)
         if (token3 % type /= TOKEN_END) &
-            call seterr(err, "End of line expected")
+            call seterr(err, "End of line expected", loc=token3%loc)
 
     end subroutine
 

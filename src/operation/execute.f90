@@ -4,6 +4,7 @@ module command_m
     use value_base_m
     use namespace_m
     use error_m
+    use line_error_m
     use operation_database_m
     use tokenizer_m, only: token_loc_t
     implicit none (type, external)
@@ -102,7 +103,7 @@ contains
         class(value_t), intent(inout), allocatable :: result_value
         type(namespace_t), intent(in), optional :: namespace
         type(operation_db_t), intent(in), optional :: operation_db
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         select case(val_expr % argtype)
 
@@ -115,11 +116,14 @@ contains
                     error stop "no namespace provided so reference cannot be resolved: " // trim(refname)
                 end if
                 call namespace % fetch(refname, result_value, err)
-                if (check(err)) return
+                if (check(err)) then
+                    call seterr(err, "variable not found", loc=val_expr%loc)
+                    return
+                end if
             end associate
 
           case (ARG_CALL)
-            call evaluate_operation_call(val_expr%op_call, result_value, namespace, operation_db, err)
+            call evaluate_operation_call(val_expr, result_value, namespace, operation_db, err)
             if (check(err)) return
 
           case default
@@ -130,43 +134,49 @@ contains
     end subroutine
 
 
-    recursive subroutine evaluate_operation_call(op_call, result_value, namespace, operation_db, err)
-        type(ast_operation_call_t), intent(in) :: op_call
+    recursive subroutine evaluate_operation_call(val_expr, result_value, namespace, operation_db, err)
+        type(ast_expression_t), intent(in) :: val_expr
         class(value_t), intent(inout), allocatable :: result_value
         type(namespace_t), intent(in), optional :: namespace
         type(operation_db_t), intent(in), optional :: operation_db
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         class(operation_t), allocatable :: op
         type(value_item_t), allocatable, target :: arg_values(:)
         integer :: i, nr_args
 
-        if (allocated(op_call%op)) then
-            ! sometimes in testing/debugging we might use allocated operations
-            allocate(op, source=op_call%op)
-        else
-            if (.not. present(operation_db)) then
-                error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
+        associate(op_call => val_expr%op_call)
+
+            if (allocated(op_call%op)) then
+                ! sometimes in testing/debugging we might use allocated operations
+                allocate(op, source=op_call%op)
+            else
+                if (.not. present(operation_db)) then
+                    error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
+                end if
+                call fetch_operation(operation_db, op_call%opname, op, err)
+                if (check(err)) then
+                    call seterr(err, "unknown operation", val_expr%loc)
+                    return
+                end if
             end if
-            call fetch_operation(operation_db, op_call%opname, op, err)
-            if (check(err)) return
-        end if
 
-        nr_args = size(op_call % args)
+            nr_args = size(op_call % args)
 
-        allocate(arg_values(nr_args))
-        do i = 1, nr_args
-            call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
-            if (check(err)) return
-        end do
+            allocate(arg_values(nr_args))
+            do i = 1, nr_args
+                call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
+                if (check(err)) return
+            end do
 
-        write (*,*) 'TRACE ', op%trace(arg_values)
+            write (*,*) 'TRACE ', op%trace(arg_values)
 
-        ! here should be checked if this call result is already cached
-        ! if not, execute the operation and cache the result
-        call op % exec_trace(arg_values, result_value)
-        ! call namespace % set_cached(result % value)
+            ! here should be checked if this call result is already cached
+            ! if not, execute the operation and cache the result
+            call op % exec_trace(arg_values, result_value)
+            ! call namespace % set_cached(result % value)
 
+        end associate
     end subroutine
 
     subroutine execute_statement(stmt, result_value, namespace, operation_db, err)
@@ -174,7 +184,7 @@ contains
         class(value_t), intent(inout), allocatable :: result_value
         type(namespace_t), intent(inout), optional :: namespace
         type(operation_db_t), intent(in), optional :: operation_db
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         call evaluate_expression(stmt%rhs, result_value, namespace, operation_db, err)
         if (check(err)) return

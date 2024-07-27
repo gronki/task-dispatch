@@ -32,7 +32,7 @@ program test_console
         end if 
 
         call execute_statement(stmt, retval%value, ns, operation_db, err)
-        
+
         if (check(err)) then
             print *, err
             cycle

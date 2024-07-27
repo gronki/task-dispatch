@@ -43,7 +43,7 @@ contains
         type(operation_db_t), intent(in) :: operation_db !! operation catalog
         character(len=*), intent(in) :: opname !! operation name
         class(operation_t), intent(out), allocatable :: op !! allocatable operation
-        type(err_t), intent(out), optional :: err !! error object
+        class(err_t), intent(out), optional :: err !! error object
 
         integer :: i
 
@@ -64,7 +64,7 @@ contains
 
         type(operation_db_t), intent(inout) :: operation_db !! operation catalog
         class(operation_t), intent(in) :: op !! allocatable operation
-        type(err_t), intent(out), optional :: err !! error object
+        class(err_t), intent(out), optional :: err !! error object
 
         character(len=:), allocatable :: opname
         integer :: i

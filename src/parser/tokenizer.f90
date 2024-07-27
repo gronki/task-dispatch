@@ -13,7 +13,14 @@ module tokenizer_m
 
     type, public :: token_loc_t
         integer :: line = -1, offset = -1
+    contains
+        procedure, pass(loc) :: token_loc_write_fmt
+        generic :: write(formatted) => token_loc_write_fmt
+        procedure, pass(loc) :: token_loc_read_fmt
+        generic :: read(formatted) => token_loc_read_fmt
     end type
+
+    private :: token_loc_write_fmt, token_loc_read_fmt
 
     type, public :: token_t
         integer :: type = token_none
@@ -203,7 +210,7 @@ contains
         character(len=*), intent(in) :: line
         type(tok_array_t), intent(out) :: tok_array
         type(tokenizer_t) :: tokenizer
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
         integer :: i
         INTEGER, PARAMETER :: TOKEN_ARRAY_MAX_SIZE = 4096
 
@@ -302,5 +309,33 @@ contains
 
         are_not_equal = .not. tokens_are_equal(token1, token2)
     end function
+
+    subroutine token_loc_write_fmt(loc,unit,iotype,v_list,iostat,iomsg)
+        CLASS(token_loc_t), intent(in) :: loc
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: iotype
+        integer, intent(in) :: v_list(:)
+        integer, intent(out) :: iostat
+        character(len=*), intent(inout) :: iomsg
+        character(len=80) :: buffer
+        integer :: i
+
+        write(unit, fmt='("L",i5.5,"C",i3.3)', iostat=iostat, iomsg=iomsg) &
+            max(loc%line, 0), max(loc%offset, 0)
+    end subroutine
+
+    subroutine token_loc_read_fmt(loc,unit,iotype,v_list,iostat,iomsg)
+        CLASS(token_loc_t), intent(inout) :: loc
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: iotype
+        integer, intent(in) :: v_list(:)
+        integer, intent(out) :: iostat
+        character(len=*), intent(inout) :: iomsg
+        character(len=80) :: buffer
+        integer :: i
+
+        read(unit, fmt='("L",i5.5,"C",i3.3)', iostat=iostat, iomsg=iomsg) &
+            loc%line, loc%offset
+    end subroutine
 
 end module

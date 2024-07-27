@@ -27,7 +27,7 @@ contains
         class(namespace_t), intent(inout) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), intent(in) :: value
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         class(value_t), allocatable :: new_value
 
@@ -39,7 +39,7 @@ contains
         class(namespace_t), intent(inout) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), intent(inout), allocatable :: value
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         integer :: i
 
@@ -64,7 +64,7 @@ contains
         class(namespace_t), intent(in) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), allocatable, intent(inout) :: value
-        type(err_t), intent(out), optional :: err
+        class(err_t), intent(out), optional :: err
 
         integer :: i
 

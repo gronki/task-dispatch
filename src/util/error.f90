@@ -14,15 +14,23 @@ module error_m
         generic :: write(formatted) => error_write_formatted
     end type
 
+    interface seterr
+        module procedure seterr_string
+    end interface
+
+    private :: seterr_string
+
     interface clear
         module procedure clear_err
     end interface
+
+    private :: clear_err
 
 contains
 
     pure function check(err)
 
-        type(err_t), intent(in), optional :: err
+        class(err_t), intent(in), optional :: err
         logical :: check
 
         if (.not. present(err)) then
@@ -34,8 +42,8 @@ contains
 
     end function
 
-    pure subroutine seterr(err, message)
-        type(err_t), intent(inout), optional :: err
+    pure subroutine seterr_string(err, message)
+        class(err_t), intent(inout), optional :: err
         character(len=*), intent(in) :: message
         type(err_messg_line_t), allocatable :: new_messages(:)
 
@@ -54,7 +62,7 @@ contains
     end subroutine
 
     pure subroutine clear_err(err)
-        type(err_t), intent(inout), optional :: err
+        class(err_t), intent(inout), optional :: err
 
         if (.not. present(err)) return
 
