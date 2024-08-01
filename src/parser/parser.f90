@@ -53,6 +53,7 @@ contains
 
             call get_next_token(tokens, token)
             child_expr = expr
+            child_expr%loc = expr%loc ! why is this needed?
 
             if (child_expr%argtype /= ARG_REF .and. child_expr%argtype /= ARG_CALL) then
                 call seterr(err, "chaining only allowed on idents and function call results", child_expr%loc)
@@ -103,6 +104,7 @@ contains
 
         if (token%type == token_num_literal) then
             expr = ast_expression(real_value(token%value), loc=token%loc)
+            expr % loc = token % loc ! why is this needed?
             call get_next_token(tokens)
             return
         end if
@@ -148,9 +150,13 @@ contains
                 end if
 
                 num_args = num_args + 1
-                if (num_args > max_args) error stop "too many arguments, currently only 16 allowed"
+                if (num_args > max_args) then
+                    call seterr(err, "too many arguments, currently only 16 allowed", loc=token%loc)
+                    return
+                end if
 
                 call parse_function_argument(tokens, opcall%args(num_args), opcall%keys(num_args), err)
+                if (check(err)) return
 
                 call get_current_token(tokens, token)
 

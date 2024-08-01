@@ -6,6 +6,7 @@ program test_console
     use namespace_m
     use operation_database_m
     use example_operations_m
+    use line_error_m
 
     character(len=4096) :: line
     type(ast_statement_t) :: stmt
@@ -27,14 +28,14 @@ program test_console
         call parse_statement(tokens, stmt, err)
 
         if (check(err)) then
-            print *, err
+            write(*, '(dt)') error_with_line(err, line)
             cycle
         end if 
 
         call execute_statement(stmt, retval%value, ns, operation_db, err)
 
         if (check(err)) then
-            print *, err
+            write(*, '(dt)') error_with_line(err, line)
             cycle
         end if 
 

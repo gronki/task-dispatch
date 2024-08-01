@@ -153,7 +153,6 @@ contains
         type(token_t), intent(out) :: token
         character(len=1) :: ch
 
-
         if (is_end(tokenizer)) then
             token%type = token_end
             return
@@ -203,6 +202,7 @@ contains
             return
         end if
 
+        ! TODO: this must be handled as a proper err_t
         write (error_unit, *) "parser warning: unknown character: ", ch
         error stop
 

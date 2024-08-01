@@ -73,7 +73,6 @@ contains
         val_expr % argtype = ARG_REF
         allocate(val_expr % reference, source=reference)
         if (present(loc)) val_expr % loc = loc
-        print *, 'FIX1 ', val_expr % loc 
     end function
 
     function ast_expr_op_args(op, args, loc) result(val_expr)
@@ -118,7 +117,6 @@ contains
                 end if
                 call namespace % fetch(refname, result_value, err)
                 if (check(err)) then
-                    print *, val_expr%loc
                     call seterr(err, "here", loc=val_expr%loc)
                     return
                 end if
