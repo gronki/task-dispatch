@@ -1,12 +1,13 @@
 module operation_power_m
 
-    use operation_m, only: operation_t, value_item_t
+    use value_base_m, only: value_item_t
+    use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)
 
     type, extends(operation_t) :: op_pow_t
     contains
-        procedure :: name => powd_name
+        procedure, nopass :: name => powd_name
         procedure :: exec => exec_pow
         procedure :: trace => trace_pow
     end type
@@ -43,8 +44,7 @@ contains
             // "%pow(" // trim(inputs(2) % value % get_trace())  // ")"
     end function
 
-    pure function powd_name(op) result(name)
-        class(op_pow_t), intent(in) :: op
+    pure function powd_name() result(name)
         character(len=32) :: name
 
         name = "pow"

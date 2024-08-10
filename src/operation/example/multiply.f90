@@ -1,12 +1,13 @@
 module operation_multiply_m
 
-    use operation_m, only: operation_t, value_item_t
+    use value_base_m, only: value_item_t
+    use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)
 
     type, extends(operation_t) :: multiply_t
     contains
-        procedure :: name => multiply_name
+        procedure, nopass :: name => multiply_name
         procedure :: exec => exec_multiply
     end type
 
@@ -37,8 +38,7 @@ contains
 
     end subroutine
 
-    pure function multiply_name(op) result(name)
-        class(multiply_t), intent(in) :: op
+    pure function multiply_name() result(name)
         character(len=32) :: name
 
         name = "mul"

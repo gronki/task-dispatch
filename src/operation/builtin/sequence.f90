@@ -1,12 +1,13 @@
 module operation_mksequence_m
 
-    use operation_m, only: operation_t, value_item_t
+    use value_base_m, only: value_t, value_item_t
+    use operation_m, only: operation_t
     use sequence_value_m
     implicit none (type, external)
 
     type, extends(operation_t) :: op_mkseq_t
     contains
-        procedure :: name => mkseqd_name
+        procedure, nopass :: name => mkseqd_name
         procedure :: exec => exec_mkseq
         procedure :: trace => trace_mkseq
     end type
@@ -43,11 +44,10 @@ contains
 
     end function
 
-    pure function mkseqd_name(op) result(name)
-        class(op_mkseq_t), intent(in) :: op
-        character(len=32) :: name
+    pure function mkseqd_name()
+        character(len=32) :: mkseqd_name
 
-        name = "array"
+        mkseqd_name = "array"
     end function
 
 end module

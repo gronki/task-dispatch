@@ -1,12 +1,13 @@
 module operation_add_m
 
-    use operation_m, only: operation_t, value_item_t
+    use value_base_m, only: value_item_t
+    use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)
 
     type, extends(operation_t) :: add_t
     contains
-        procedure :: name => add_name
+        procedure, nopass :: name => add_name
         procedure :: exec => exec_add
     end type
 
@@ -37,8 +38,7 @@ contains
 
     end subroutine
 
-    pure function add_name(op) result(name)
-        class(add_t), intent(in) :: op
+    pure function add_name() result(name)
         character(len=32) :: name
 
         name = "add"

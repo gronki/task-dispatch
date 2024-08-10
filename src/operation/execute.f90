@@ -35,11 +35,6 @@ module command_m
         character(len=32) :: refname
     end type
 
-    type input_key_t
-        logical :: has_key = .false.
-        character(len=32) :: key = ""
-    end type
-
     type ast_operation_call_t
         class(operation_t), allocatable :: op
         character(len=32) :: opname
@@ -147,20 +142,6 @@ contains
 
         associate(op_call => val_expr%op_call)
 
-            if (allocated(op_call%op)) then
-                ! sometimes in testing/debugging we might use allocated operations
-                allocate(op, source=op_call%op)
-            else
-                if (.not. present(operation_db)) then
-                    error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
-                end if
-                call fetch_operation(operation_db, op_call%opname, op, err)
-                if (check(err)) then
-                    call seterr(err, "here", val_expr%loc)
-                    return
-                end if
-            end if
-
             nr_args = size(op_call % args)
 
             allocate(arg_values(nr_args))
@@ -168,6 +149,20 @@ contains
                 call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
                 if (check(err)) return
             end do
+
+            if (allocated(op_call%op)) then
+                ! sometimes in testing/debugging we might use allocated operations
+                allocate(op, source=op_call%op)
+            else
+                if (.not. present(operation_db)) then
+                    error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
+                end if
+                call fetch_operation(operation_db, op_call%opname, arg_values, op_call%keys, op, err)
+                if (check(err)) then
+                    call seterr(err, "here", val_expr%loc)
+                    return
+                end if
+            end if
 
             write (*,*) 'TRACE ', op%trace(arg_values)
 

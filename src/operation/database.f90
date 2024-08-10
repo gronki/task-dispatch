@@ -1,5 +1,6 @@
 module operation_database_m
 
+    use value_base_m, only: value_item_t
     use operation_m
     use error_m
 
@@ -13,6 +14,7 @@ module operation_database_m
     integer, parameter :: OPERATION_DB_CAPACITY = 128
 
     type operation_db_t
+        integer :: current_size = 0
         type(operation_db_entry_t) :: db(OPERATION_DB_CAPACITY)
     end type
 
@@ -36,22 +38,54 @@ contains
         call operation_db_init(operation_db_new)
     end function
 
+    pure function is_operation_matching_sequence_safe(op, inputs, labels) result(matching)
+        class(operation_t), intent(in) :: op !! operation
+        type(value_item_t), intent(in) :: inputs(:) !! inputs for matching the operation
+        type(input_key_t), intent(in) :: labels(:) !! labels to inputs
+        logical :: matching
+        integer :: input_seq_len(size(inputs))
+        type(value_item_t) :: first_item(size(inputs))
 
-    pure subroutine fetch_operation(operation_db, opname, op, err)
+        if (.not. op % is_elemental()) then
+            matching = op % args_match(inputs, labels)
+            return
+        end if
+
+        input_seq_len = argument_sequence_lengths(inputs)
+
+        if (maxval(input_seq_len) == 0) then
+            matching = op % args_match(inputs, labels)
+            return
+        end if
+
+        ! here we deal with sequence -- only check first element
+
+        call make_sequential_input_vector(inputs, 1, first_item, .false.)
+        matching = op % args_match(first_item, labels)
+
+    end function
+
+
+    pure subroutine fetch_operation(operation_db, opname, inputs, labels, op, err)
         !! fetches an operation from the operation database based on its name
 
         type(operation_db_t), intent(in) :: operation_db !! operation catalog
         character(len=*), intent(in) :: opname !! operation name
+        type(value_item_t), intent(in) :: inputs(:) !! inputs for matching the operation
+        type(input_key_t), intent(in) :: labels(:) !! labels to inputs
         class(operation_t), intent(out), allocatable :: op !! allocatable operation
         class(err_t), intent(out), optional :: err !! error object
 
         integer :: i
 
-        do i = 1, size(operation_db % db)
+        do i = 1, operation_db % current_size
             associate (entry => operation_db % db(i))
                 if (opname == entry % opname) then
-                    allocate(op, source=entry % op)
-                    return
+                    if (.not. allocated(entry%op)) continue
+                    if (is_operation_matching_sequence_safe(entry%op, inputs, labels)) then
+                        allocate(op, source=entry % op)
+                        return
+                    end if
                 end if
             end associate
         end do
@@ -77,15 +111,11 @@ contains
 
         do i = 1, size(operation_db % db)
             associate (entry => operation_db % db(i))
-                if (opname == entry % opname) then
-                    call seterr(err, "operation " // opname // " already defined")
-                    return
-                end if
-                if (entry % opname == "") then
-                    allocate(entry % op, source=op)
-                    entry % opname = opname
-                    return
-                end if
+                if (entry % opname /= "") cycle
+                allocate(entry % op, source=op)
+                entry % opname = opname
+                operation_db%current_size = max(operation_db%current_size, i)
+                return
             end associate
         end do
 
