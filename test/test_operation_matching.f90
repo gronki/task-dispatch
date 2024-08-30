@@ -168,6 +168,14 @@ contains
         call add_operation(opdb, add_strings_t())
     end subroutine
 
+    subroutine init_bad(opdb)
+        type(operation_db_t) :: opdb
+        call operation_db_init(opdb)
+        call add_operation(opdb, add_numbers_t())
+        call add_operation(opdb, add_numbers_t())
+        call add_operation(opdb, add_strings_t())
+    end subroutine
+
     subroutine run_numbers
         type(operation_db_t) :: opdb
         class(operation_t), allocatable :: op
@@ -244,6 +252,28 @@ contains
 
     end subroutine
 
+    subroutine run_ambiguous
+        type(operation_db_t) :: opdb
+        class(operation_t), allocatable :: op
+        type(value_item_t), allocatable :: inputs(:)
+        class(value_t), allocatable :: result
+        type(err_t) :: err
+
+        call init_bad(opdb)
+
+        inputs = [value_item_t(real_value(2.0_f64)), value_item_t(real_value(1.0_f64))]
+
+        call fetch_operation(opdb, &
+            "add", &
+            inputs, &
+            [input_key_t(), input_key_t()], &
+            op, &
+            err)
+
+        call assert(check(err), "error expected on ambiguous operation")
+
+    end subroutine
+
 
     subroutine run_sequence
         type(operation_db_t) :: opdb
@@ -307,6 +337,7 @@ contains
         call run_numbers
         call run_strings
         call run_mismatch
+        call run_ambiguous
         call run_sequence
         call run_str_sequence
     end subroutine

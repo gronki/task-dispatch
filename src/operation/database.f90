@@ -77,20 +77,44 @@ contains
         class(err_t), intent(out), optional :: err !! error object
 
         integer :: i
+        logical :: is_match(operation_db % current_size)
+
+        is_match = .false.
 
         do i = 1, operation_db % current_size
             associate (entry => operation_db % db(i))
                 if (opname == entry % opname) then
                     if (.not. allocated(entry%op)) continue
                     if (is_operation_matching_sequence_safe(entry%op, inputs, labels)) then
-                        allocate(op, source=entry % op)
-                        return
+                        is_match(i) = .true.
                     end if
                 end if
             end associate
         end do
 
-        call seterr(err, "unknown operation " // opname)
+        associate (num_matches => count(is_match))
+            if (num_matches /= 1) then
+                if (num_matches == 0) then
+                    call seterr(err, "unknown operation " // opname)
+                    return
+                end if
+                block
+                    character(len=256) :: errbuf
+                    write(errbuf, *) "operation ", opname, " yielded ambigous match (", num_matches, " entries)"
+                    call seterr(err, trim(errbuf))
+                    return
+                end block
+            end if
+        end associate
+
+        ! exactly one match is expected
+
+        associate(matched_indices => pack([(i, i = 1, operation_db % current_size)], is_match))
+            associate (entry => operation_db % db(matched_indices(1)))
+                allocate(op, source=entry % op)
+            end associate
+        end associate
+
     end subroutine
 
     pure subroutine add_operation(operation_db, op, err)
