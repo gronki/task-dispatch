@@ -7,6 +7,10 @@ module value_m
     contains
         procedure, private :: trace_write_formatted
         generic :: write(Formatted) => trace_write_formatted
+        generic :: operator(==) => traces_are_equal
+        procedure, private :: traces_are_equal
+        generic :: operator(/=) => traces_are_not_equal
+        procedure, private :: traces_are_not_equal
     end type
 
     public :: value_trace_t
@@ -53,6 +57,24 @@ contains
 
         trace%str = "{" // value%to_str() // "}"
 
+    end function
+
+    elemental function traces_are_equal(trace, other_trace)
+        CLASS(value_trace_t), intent(in) :: trace, other_trace
+        logical :: traces_are_equal
+
+        if (allocated(trace % str) .and. allocated(other_trace % str)) then
+            traces_are_equal = (trace % str) == (other_trace % str)
+            return
+        end if
+        traces_are_equal = .false.
+    end function
+
+    elemental function traces_are_not_equal(trace, other_trace)
+        CLASS(value_trace_t), intent(in) :: trace, other_trace
+        logical :: traces_are_not_equal
+
+        traces_are_not_equal = .not. traces_are_equal(trace, other_trace)
     end function
 
     pure function to_str(value) result(str)
