@@ -183,6 +183,19 @@ contains
 
     end subroutine
 
+    function parsed_expression(line, err)
+        character(len=*), intent(in) :: line
+        type(tok_array_t) :: tokens
+        type(err_t), intent(out), optional :: err
+        type(ast_expression_t) :: parsed_expression
+
+        call tokenize_into_array(line, tokens, err)
+        if (check(err)) return
+
+        call parse_expression(tokens, parsed_expression, err)
+
+    end function
+
     subroutine parse_statement(tokens, statement, err)
         !! Parses an entire statement, that is, a full line of code.
         !! Currently statement can either be:
