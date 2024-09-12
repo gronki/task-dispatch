@@ -1,6 +1,6 @@
 module operation_square_m
 
-    use value_base_m, only: value_item_t
+    use value_m, only: value_item_t
     use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)
@@ -9,7 +9,6 @@ module operation_square_m
     contains
         procedure, nopass :: name => squared_name
         procedure :: exec => exec_square
-        procedure :: trace => trace_square
     end type
 
 contains
@@ -31,14 +30,6 @@ contains
         error stop "unexpected input type for square"
 
     end subroutine
-
-    function trace_square(op, inputs) result(output_trace)
-        class(square_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
-        character(len=:), allocatable :: output_trace
-
-        output_trace = "" // trim(inputs(1) % value % get_trace()) // "%pow(2)"
-    end function
 
     pure function squared_name() result(name)
         character(len=32) :: name

@@ -214,7 +214,7 @@ contains
         
         character(len=*), intent(in) :: line !! line to be tokenized
         type(tok_array_t), intent(out) :: tok_array !! token array
-        class(err_t), intent(out), optional :: err !! optional error output
+        type(err_t), intent(out), optional :: err !! optional error output
 
         type(tokenizer_t) :: tokenizer
         integer :: i
@@ -240,7 +240,7 @@ contains
         !! convenience function wrapper over tokenize_into_array
 
         character(len=*), intent(in) :: line !! line to be tokenized
-        class(err_t), intent(out), optional :: err !! optional error output
+        type(err_t), intent(out), optional :: err !! optional error output
         type(tok_array_t) :: tok_array !! token array
 
         call tokenize_into_array(line, tok_array, err)

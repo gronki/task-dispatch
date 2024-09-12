@@ -1,5 +1,5 @@
 module str_value_m
-    use value_base_m
+    use value_m
     use, intrinsic :: iso_fortran_env, only: f64 => real64
 
     implicit none (type, external)
@@ -30,8 +30,9 @@ contains
         type(str_value_t) :: value_obj
 
         value_obj % value = value
+        
         if (present(trace)) then
-            value_obj % trace = trim(adjustl(trace))
+            value_obj % trace % str = trim(adjustl(trace))
         end if
     end function
 

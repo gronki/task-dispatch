@@ -1,6 +1,6 @@
 module namespace_m
 
-    use value_base_m
+    use value_m
     use error_m
     implicit none (type, external)
     public
@@ -27,7 +27,7 @@ contains
         class(namespace_t), intent(inout) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), intent(in) :: value
-        class(err_t), intent(out), optional :: err
+        type(err_t), intent(out), optional :: err
 
         class(value_t), allocatable :: new_value
 
@@ -39,7 +39,7 @@ contains
         class(namespace_t), intent(inout) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), intent(inout), allocatable :: value
-        class(err_t), intent(out), optional :: err
+        type(err_t), intent(out), optional :: err
 
         integer :: i
 
@@ -64,7 +64,7 @@ contains
         class(namespace_t), intent(in) :: namespace
         character(len=*), intent(in) :: key
         class(value_t), allocatable, intent(inout) :: value
-        class(err_t), intent(out), optional :: err
+        type(err_t), intent(out), optional :: err
 
         integer :: i
 

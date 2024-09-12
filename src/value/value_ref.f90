@@ -1,6 +1,6 @@
 module value_ref_m
 
-    use value_base_m
+    use value_m
     implicit none (type, external)
     private
 
@@ -10,7 +10,6 @@ module value_ref_m
     end type
 
     public :: value_ref_t
-
 
     interface assignment(=)
         module procedure assign_value_ref

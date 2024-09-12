@@ -57,7 +57,7 @@ program test_namespace
 contains
 
     function fetch_ns_value(ns, key) result(val)
-        use value_base_m
+        use value_m
         type(namespace_t) :: ns
         character(len=*) :: key
         class(value_t), allocatable :: val

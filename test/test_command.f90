@@ -1,6 +1,7 @@
 program test_command
 
     use command_m
+    use ast_m
     use namespace_m
     use real_value_m
     use operation_add_m

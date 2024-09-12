@@ -1,6 +1,7 @@
 module test_operation_add_numbers_m
 
-    use value_base_m
+    use value_m
+    use sequence_value_m
     use operation_m
     use real_value_m
     implicit none (type, external)
@@ -73,7 +74,7 @@ end module
 
 module test_operation_add_strings_m
 
-    use value_base_m
+    use value_m
     use operation_m
     use str_value_m
     implicit none (type, external)
@@ -147,13 +148,13 @@ end module
 
 module test_operation_matching_1
     use real_value_m
+    use sequence_value_m
     use iso_fortran_env, only: f64 => real64
     use str_value_m
     use operation_database_m
     use operation_m
     use error_m
     use test_assert_m
-    use sequence_value_m
     use test_operation_add_numbers_m
     use test_operation_add_strings_m
 

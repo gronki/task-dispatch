@@ -1,6 +1,6 @@
 module operation_multiply_m
 
-    use value_base_m, only: value_item_t
+    use value_m, only: value_item_t
     use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)

@@ -12,6 +12,7 @@ contains
         use operation_square_m
         use operation_multiply_m
         use operation_power_m
+        use operation_range_m
 
         type(operation_db_t) :: operation_db !! operation catalog
 
@@ -21,6 +22,7 @@ contains
         call add_operation(operation_db, square_t())
         call add_operation(operation_db, multiply_t())
         call add_operation(operation_db, op_pow_t())
+        call add_operation(operation_db, op_range_t())
     end function
 
 end module

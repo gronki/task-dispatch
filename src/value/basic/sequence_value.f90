@@ -1,9 +1,8 @@
 module sequence_value_m
-    use value_base_m
-    use, intrinsic :: iso_fortran_env, only: f64 => real64
+    use value_m
 
     implicit none (type, external)
-    public
+    private
 
     type, extends(value_t) :: sequence_value_t
         type(value_item_t), allocatable :: items(:)
@@ -12,8 +11,9 @@ module sequence_value_m
         procedure :: get_trace => sequence_get_trace
     end type
 
-contains
+    public :: sequence_value_t
 
+contains
 
     pure function sequence_to_str(value) result(str)
         class(sequence_value_t), intent(in) :: value
@@ -34,27 +34,29 @@ contains
         str = str // "]"
     end function
 
-    pure function sequence_get_trace(value) result(trace)
+    elemental function sequence_get_trace(value) result(trace)
         class(sequence_value_t), intent(in) :: value
-        character(len=:), allocatable :: trace
+        type(value_trace_t) :: trace, item_trace
         integer :: i
 
-        if (allocated(value%trace)) then
-            trace = value%trace
+        if (allocated(value%trace%str)) then
+            trace%str = value%trace%str
             return
         end if
 
-        trace = "["
+        trace%str = "["
 
         if (allocated(value%items)) then
             do i =1, size(value%items)
-                trace = trace // trim(value%items(i) % value % get_trace()) &
+                item_trace = value % items(i) % value % get_trace()
+                trace%str = trace%str // trim(item_trace % str) &
                     // adjustl(trim(merge("  ", " ,", i == size(value%items))))
             end do
         end if
 
-        trace = trace // "]"
+        trace%str = trace%str // "]"
 
     end function
 
-end module
+
+end module sequence_value_m

@@ -13,7 +13,7 @@ module line_error_m
     public :: seterr
 
     type :: error_with_line_t
-        class(err_t), allocatable :: err
+        type(err_t), allocatable :: err
         character(len=1024) :: line
         logical :: print_line = .true.
         character(len=:), allocatable :: error_prefix
@@ -32,7 +32,7 @@ module line_error_m
 contains
 
     pure subroutine seterr_loc(err, message, loc)
-        class(err_t), intent(inout), optional :: err
+        type(err_t), intent(out), optional :: err
         character(len=*), intent(in) :: message
         type(token_loc_t), intent(in) :: loc
 
@@ -49,7 +49,7 @@ contains
     end subroutine
 
     pure function new_error_with_line(err, line, print_line, error_prefix)
-        class(err_t), intent(in) :: err
+        type(err_t), intent(in) :: err
         character(len=*), intent(in) :: line
         logical, intent(in), optional :: print_line
         character(len=*), intent(in), optional :: error_prefix

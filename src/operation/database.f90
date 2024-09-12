@@ -1,6 +1,6 @@
 module operation_database_m
 
-    use value_base_m, only: value_item_t
+    use value_m, only: value_item_t
     use operation_m
     use error_m
 
@@ -73,8 +73,8 @@ contains
         character(len=*), intent(in) :: opname !! operation name
         type(value_item_t), intent(in) :: inputs(:) !! inputs for matching the operation
         type(input_key_t), intent(in) :: labels(:) !! labels to inputs
-        class(operation_t), intent(out), allocatable :: op !! allocatable operation
-        class(err_t), intent(out), optional :: err !! error object
+        class(operation_t), intent(inout), allocatable :: op !! allocatable operation
+        type(err_t), intent(out), optional :: err !! error object
 
         integer :: i
         logical :: is_match(operation_db % current_size)
@@ -122,7 +122,7 @@ contains
 
         type(operation_db_t), intent(inout) :: operation_db !! operation catalog
         class(operation_t), intent(in) :: op !! allocatable operation
-        class(err_t), intent(out), optional :: err !! error object
+        type(err_t), intent(out), optional :: err !! error object
 
         character(len=:), allocatable :: opname
         integer :: i

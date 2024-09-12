@@ -1,6 +1,6 @@
 program test_refs
 
-    use value_base_m
+    use value_m
     use value_ref_m
     use real_value_m
 

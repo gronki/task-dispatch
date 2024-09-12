@@ -1,6 +1,6 @@
 module operation_power_m
 
-    use value_base_m, only: value_item_t
+    use value_m, only: value_item_t
     use operation_m, only: operation_t
     use real_value_m
     implicit none (type, external)
@@ -9,7 +9,6 @@ module operation_power_m
     contains
         procedure, nopass :: name => powd_name
         procedure :: exec => exec_pow
-        procedure :: trace => trace_pow
     end type
 
 contains
@@ -34,15 +33,6 @@ contains
         error stop "unexpected input type for pow"
 
     end subroutine
-
-    function trace_pow(op, inputs) result(output_trace)
-        class(op_pow_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
-        character(len=:), allocatable :: output_trace
-
-        output_trace = "" // trim(inputs(1) % value % get_trace()) &
-            // "%pow(" // trim(inputs(2) % value % get_trace())  // ")"
-    end function
 
     pure function powd_name() result(name)
         character(len=32) :: name

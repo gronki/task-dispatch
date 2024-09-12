@@ -1,6 +1,6 @@
 module operation_m
 
-    use value_base_m
+    use value_m
     use sequence_value_m
     use iso_fortran_env, only: debug_output => error_unit
     implicit none (type, external)
@@ -111,7 +111,7 @@ contains
         end do
     end subroutine
 
-    subroutine exec_trace(op, inputs, output)
+    recursive subroutine exec_trace(op, inputs, output)
         !! Execute the operation and handle value tracing
         !! as well as sequence processing.
         !! If your operation explicitly expects sequences
@@ -126,12 +126,13 @@ contains
         integer :: sequence_lengths(size(inputs))
         integer :: input_index, sequence_index, sequence_length, num_inputs
         type(sequence_value_t), allocatable :: sequence_output
+        integer :: i
 
         num_inputs = size(inputs)
 
         if (.not. op % is_elemental()) then
             call op % exec(inputs, output)
-            output % trace = op % trace(inputs)
+            output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
             return
         end if
 
@@ -141,7 +142,7 @@ contains
         ! here we handle a typical case, where none of the inputs is a sequence
         if (sequence_length == 0) then
             call op % exec(inputs, output)
-            output % trace = op % trace(inputs)
+            output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
             return
         end if
 
@@ -162,8 +163,7 @@ contains
         do sequence_index = 1, sequence_length
             call make_sequential_input_vector(inputs, sequence_index, temp_inputs, sequence_index > 1)
             associate (output_item => sequence_output%items(sequence_index))
-                call op % exec(temp_inputs, output_item%value)
-                output_item%value % trace = op % trace(temp_inputs)
+                call exec_trace(op, temp_inputs, output_item%value)
                 write (debug_output, *) ' sequence item ', sequence_index, ' ', &
                     output_item%value % get_trace(), ' ---> ',  output_item%value%to_str()
             end associate
@@ -181,23 +181,26 @@ contains
         call op % exec_trace(inputs, output)
     end function
 
-    function trace_generic(op, inputs) result(output_trace)
+    function trace_generic(op, input_traces) result(output_trace)
         !! Produces a generic trace for any operation following
         !! the pattern: opname(trace_arg1, trace_arg2, ...)
         !> operation
         class(operation_t), intent(in) :: op
         !> operation inputs
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_trace_t), intent(in) :: input_traces(:)
         !> string trace
-        character(len=:), allocatable :: output_trace
-        integer :: i
+        type(value_trace_t) :: output_trace
+        integer :: i, num_inputs
 
-        output_trace = trim(op % name()) // "("
+        num_inputs = size(input_traces)
+        output_trace % str = "@" // trim(op % name()) // "{"
 
-        do i = 1, size(inputs)
-            output_trace = output_trace &
-                // trim(inputs(i) % value % get_trace()) &
-                // adjustl(trim(merge(" ,", ") ", i < size(inputs))))
+        do i = 1, num_inputs
+            associate (arg_trace => input_traces(i))
+                output_trace % str = output_trace % str &
+                    // trim(arg_trace % str) &
+                    // adjustl(trim(merge(" ,", "} ", i < num_inputs)))
+            end associate
         end do
     end function
 

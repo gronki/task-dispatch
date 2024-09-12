@@ -30,7 +30,7 @@ contains
 
     pure function check(err)
 
-        class(err_t), intent(in), optional :: err
+        type(err_t), intent(in), optional :: err
         logical :: check
 
         if (.not. present(err)) then
@@ -62,7 +62,7 @@ contains
     end subroutine
 
     pure subroutine clear_err(err)
-        class(err_t), intent(inout), optional :: err
+        type(err_t), intent(inout), optional :: err
 
         if (.not. present(err)) return
 

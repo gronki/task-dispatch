@@ -6,6 +6,7 @@ module parser_m
     use real_value_m
     use error_m
     use line_error_m
+    use ast_m
     implicit none (type, external)
 
 
@@ -18,7 +19,7 @@ contains
         type(ast_expression_t) :: child_expr
         type(token_t) :: token1, token2
         character(len=:), allocatable :: label_name
-        class(err_t), intent(out), optional :: err !! error object
+        type(err_t), intent(out), optional :: err !! error object
 
         call peek_token(tokens, 0, token1)
         call peek_token(tokens, 1, token2)
@@ -42,7 +43,7 @@ contains
         type(ast_expression_t), intent(out) :: expr
         type(ast_expression_t) :: child_expr
         type(token_t) :: token
-        class(err_t), intent(out), optional :: err
+        type(err_t), intent(out), optional :: err
         integer :: pivot
 
         call parse_recursive(tokens, expr, err)
@@ -98,7 +99,7 @@ contains
         type(tok_array_t), intent(inout) :: tokens
         type(ast_expression_t), intent(out) :: expr
         type(token_t) :: token, ident_token
-        class(err_t), intent(out), optional :: err !! error object
+        type(err_t), intent(out), optional :: err !! error object
 
         call get_current_token(tokens, token)
 
@@ -190,7 +191,7 @@ contains
 
         type(tok_array_t), intent(inout) :: tokens  !! Token array to process
         type(ast_statement_t), intent(out) :: statement !! Statement object
-        class(err_t), intent(out), optional :: err !! error object
+        type(err_t), intent(out), optional :: err !! error object
 
         type(token_t) :: token1, token2, token3
 
