@@ -80,7 +80,7 @@ contains
                 if (.not. present(operation_db)) then
                     error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
                 end if
-                call fetch_operation(operation_db, op_call%opname, arg_values, op_call%keys, op, err)
+                call fetch_operation(operation_db, op_call%opname, op, err)
                 if (check(err)) then
                     call seterr(err, "here", val_expr%loc)
                     return

@@ -5,6 +5,7 @@ module operation_database_m
     use error_m
 
     implicit none (type, external)
+    private
 
     type operation_db_entry_t
         character(len=32) :: opname = ""
@@ -22,6 +23,14 @@ module operation_database_m
         module procedure :: operation_db_new
     end interface
 
+    public :: operation_db_t
+
+    interface fetch_operation
+        module procedure :: fetch_operation_by_inputs
+        module procedure :: fetch_operation_by_name
+    end interface
+
+    public :: operation_db_init, fetch_operation, add_operation
 
 contains
 
@@ -66,7 +75,54 @@ contains
     end function
 
 
-    pure subroutine fetch_operation(operation_db, opname, inputs, labels, op, err)
+    pure subroutine fetch_operation_by_name(operation_db, opname, op, err)
+        !! fetches an operation from the operation database based on its name
+
+        type(operation_db_t), intent(in) :: operation_db !! operation catalog
+        character(len=*), intent(in) :: opname !! operation name
+        class(operation_t), intent(inout), allocatable :: op !! allocatable operation
+        type(err_t), intent(out), optional :: err !! error object
+
+        integer :: i
+        logical :: is_match(operation_db % current_size)
+
+        is_match = .false.
+
+        do i = 1, operation_db % current_size
+            associate (entry => operation_db % db(i))
+                if (opname == entry % opname) then
+                    if (.not. allocated(entry%op)) continue
+                    is_match(i) = .true.
+                end if
+            end associate
+        end do
+
+        associate (num_matches => count(is_match))
+            if (num_matches /= 1) then
+                if (num_matches == 0) then
+                    call seterr(err, "unknown operation " // opname)
+                    return
+                end if
+                block
+                    character(len=256) :: errbuf
+                    write(errbuf, *) "operation ", opname, " yielded ambigous match (", num_matches, " entries)"
+                    call seterr(err, trim(errbuf))
+                    return
+                end block
+            end if
+        end associate
+
+        ! exactly one match is expected
+
+        associate(matched_indices => pack([(i, i = 1, operation_db % current_size)], is_match))
+            associate (entry => operation_db % db(matched_indices(1)))
+                allocate(op, source=entry % op)
+            end associate
+        end associate
+
+    end subroutine
+
+    pure subroutine fetch_operation_by_inputs(operation_db, opname, inputs, labels, op, err)
         !! fetches an operation from the operation database based on its name
 
         type(operation_db_t), intent(in) :: operation_db !! operation catalog
