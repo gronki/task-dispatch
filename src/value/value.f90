@@ -55,7 +55,7 @@ contains
             return
         end if
 
-        trace%str = "{" // value%to_str() // "}"
+        trace%str = value%to_str() 
 
     end function
 

@@ -59,7 +59,7 @@ contains
         str = trim(adjustl(buf))
     end function
 
-    pure subroutine parse_real(val, r, err)
+    elemental subroutine parse_real(val, r, err)
         class(value_t), intent(in) :: val
         real(kind=real_k), intent(out) :: r
         type(err_t), intent(out), optional :: err
@@ -67,6 +67,19 @@ contains
         select type(val)
           type is (real_value_t)
             r = val%value
+          class default
+            call seterr(err, "not a real value")
+        end select
+    end subroutine
+
+    elemental subroutine parse_int(val, i, err)
+        class(value_t), intent(in) :: val
+        integer, intent(out) :: i
+        type(err_t), intent(out), optional :: err
+
+        select type(val)
+          type is (real_value_t)
+            i = nint(val%value)
           class default
             call seterr(err, "not a real value")
         end select

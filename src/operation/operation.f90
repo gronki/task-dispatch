@@ -125,7 +125,6 @@ contains
         type(value_item_t) :: temp_inputs(size(inputs))
         integer :: sequence_lengths(size(inputs))
         integer :: input_index, sequence_index, sequence_length, num_inputs
-        type(sequence_value_t), allocatable :: sequence_output
         integer :: i
 
         num_inputs = size(inputs)
@@ -157,19 +156,22 @@ contains
         ! now cycle through sequence index and only allocate copies for
         ! sequence items
 
-        allocate(sequence_output)
-        allocate(sequence_output%items(sequence_length))
+        allocate(sequence_value_t :: output)
+        select type (sequence_output => output)
+          type is (sequence_value_t)
 
-        do sequence_index = 1, sequence_length
-            call make_sequential_input_vector(inputs, sequence_index, temp_inputs, sequence_index > 1)
-            associate (output_item => sequence_output%items(sequence_index))
-                call exec_trace(op, temp_inputs, output_item%value)
-                write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-                    output_item%value % get_trace(), ' ---> ',  output_item%value%to_str()
-            end associate
-        end do
+            allocate(sequence_output%items(sequence_length))
+            sequence_output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
 
-        call move_alloc(sequence_output, output)
+            do sequence_index = 1, sequence_length
+                call make_sequential_input_vector(inputs, sequence_index, temp_inputs, sequence_index > 1)
+                associate (output_item => sequence_output%items(sequence_index))
+                    call exec_trace(op, temp_inputs, output_item%value)
+                    write (debug_output, *) ' sequence item ', sequence_index, ' ', &
+                        output_item%value % get_trace(), ' ---> ',  output_item%value%to_str()
+                end associate
+            end do
+        end select
 
     end subroutine
 

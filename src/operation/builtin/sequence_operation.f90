@@ -7,7 +7,7 @@ module operation_mksequence_m
 
     type, extends(operation_t) :: op_mkseq_t
     contains
-        procedure, nopass :: name => mkseqd_name
+        procedure, nopass :: name => mkseq_name
         procedure :: exec => exec_mkseq
         procedure :: trace => trace_mkseq
     end type
@@ -50,10 +50,10 @@ contains
         end do
     end function
 
-    pure function mkseqd_name()
-        character(len=32) :: mkseqd_name
+    pure function mkseq_name()
+        character(len=32) :: mkseq_name
 
-        mkseqd_name = "array"
+        mkseq_name = "array"
     end function
 
 end module
