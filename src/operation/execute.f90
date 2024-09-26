@@ -91,7 +91,7 @@ contains
 
             ! here should be checked if this call result is already cached
             ! if not, execute the operation and cache the result
-            call op % exec_trace(arg_values, result_value)
+            call op % exec_trace(item_to_ref(arg_values), result_value)
             ! call namespace % set_cached(result % value)
 
         end associate

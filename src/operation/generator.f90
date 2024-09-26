@@ -69,7 +69,7 @@ module op_generator_m
 
     use generator_m
     use operation_m, only: input_key_t, operation_t
-    use value_m, only: value_t, value_item_t, value_trace_t
+    use value_m
     implicit none (type, external)
     private
 
@@ -94,7 +94,7 @@ contains
         class(op_generator_t), intent(inout) :: gen
         class(value_t), intent(out), allocatable :: val
 
-        class(value_item_t), allocatable :: evaluated_args(:)
+        class(value_item_t), allocatable, target :: evaluated_args(:)
         integer :: i, num_args
 
         if (.not. allocated(gen % args)) &
@@ -107,7 +107,7 @@ contains
             call gen % args(i) % gen % yield(evaluated_args(i) % value)
         end do
 
-        call gen%op%exec_trace(evaluated_args, val)
+        call gen%op%exec_trace(item_to_ref(evaluated_args), val)
 
     end subroutine
 

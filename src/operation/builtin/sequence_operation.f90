@@ -1,6 +1,6 @@
 module operation_mksequence_m
 
-    use value_m, only: value_t, value_trace_t, value_item_t
+    use value_m
     use sequence_value_m
     use operation_m, only: operation_t
     implicit none (type, external)
@@ -16,13 +16,14 @@ contains
 
     subroutine exec_mkseq(op, inputs, output)
         class(op_mkseq_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
 
         allocate(sequence_value_t :: output)
         select type (output)
           type is (sequence_value_t)
-            allocate(output%items, source=inputs)
+            allocate(output%items(size(inputs)))
+            call ref_to_item(inputs, output%items)
         end select
 
     end subroutine

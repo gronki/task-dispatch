@@ -15,7 +15,7 @@ contains
 
     subroutine exec_pow(op, inputs, output)
         class(op_pow_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
 
         if (size(inputs) /= 2) &

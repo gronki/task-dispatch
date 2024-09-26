@@ -1,4 +1,5 @@
 module sequence_value_m
+    
     use value_m
 
     implicit none (type, external)

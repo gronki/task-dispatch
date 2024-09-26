@@ -21,7 +21,7 @@ contains
     pure function args_match(inputs, labels)
         !! return true if the operation is able to handle
         !! the arguments given by the call
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         type(input_key_t), intent(in) :: labels(:)
         logical :: args_match
 
@@ -41,7 +41,7 @@ contains
 
     subroutine exec(op, inputs, output)
         class(add_numbers_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer :: i
         type(real_value_t) :: result
@@ -94,7 +94,7 @@ contains
     pure function args_match(inputs, labels)
         !! return true if the operation is able to handle
         !! the arguments given by the call
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         type(input_key_t), intent(in) :: labels(:)
         logical :: args_match
 
@@ -114,7 +114,7 @@ contains
 
     subroutine exec(op, inputs, output)
         class(add_strings_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer :: i
         type(str_value_t) :: result
@@ -180,7 +180,7 @@ contains
     subroutine run_numbers
         type(operation_db_t) :: opdb
         class(operation_t), allocatable :: op
-        type(value_item_t), allocatable :: inputs(:)
+        type(value_item_t), allocatable, target :: inputs(:)
         class(value_t), allocatable :: result
         type(err_t) :: err
 
@@ -190,13 +190,13 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
         call assert(.not. check(err), "error fetching operation")
 
-        call op%exec(inputs, result)
+        call op%exec(item_to_ref(inputs), result)
 
         call assert(same_type_as(op, add_numbers_t()), "same_type_as(op, add_numbers_t())")
         call assert(same_type_as(result, real_value(1._f64)), "same_type_as(result, real_value_t())")
@@ -208,7 +208,7 @@ contains
         type(operation_db_t) :: opdb
         class(operation_t), allocatable :: op
         type(value_item_t), allocatable :: inputs(:)
-        class(value_t), allocatable :: result
+        class(value_t), allocatable, target :: result
         type(err_t) :: err
 
         call init(opdb)
@@ -217,13 +217,13 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
         call assert(.not. check(err), "error fetching operation")
 
-        call op%exec(inputs, result)
+        call op%exec(item_to_ref(inputs), result)
 
         call assert(same_type_as(op, add_strings_t()), "same_type_as(op, add_strings_t())")
         call assert(same_type_as(result, str_value("")), "same_type_as(result, str_value_t())")
@@ -234,7 +234,7 @@ contains
     subroutine run_mismatch
         type(operation_db_t) :: opdb
         class(operation_t), allocatable :: op
-        type(value_item_t), allocatable :: inputs(:)
+        type(value_item_t), allocatable, target :: inputs(:)
         class(value_t), allocatable :: result
         type(err_t) :: err
 
@@ -244,7 +244,7 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
@@ -256,7 +256,7 @@ contains
     subroutine run_ambiguous
         type(operation_db_t) :: opdb
         class(operation_t), allocatable :: op
-        type(value_item_t), allocatable :: inputs(:)
+        type(value_item_t), allocatable, target :: inputs(:)
         class(value_t), allocatable :: result
         type(err_t) :: err
 
@@ -266,7 +266,7 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
@@ -291,13 +291,13 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
         call assert(.not. check(err), "error fetching operation")
 
-        call op%exec_trace(inputs, result)
+        call op%exec_trace(item_to_ref(inputs), result)
 
         call assert(same_type_as(op, add_numbers_t()), "same_type_as(op, add_numbers_t())")
         call assert(same_type_as(result, sequence_value_t()), "same_type_as(result, sequence_value_t())")
@@ -320,13 +320,13 @@ contains
 
         call fetch_operation(opdb, &
             "add", &
-            inputs, &
+            item_to_ref(inputs), &
             [input_key_t(), input_key_t()], &
             op, &
             err)
         call assert(.not. check(err), "error fetching operation")
 
-        call op%exec_trace(inputs, result)
+        call op%exec_trace(item_to_ref(inputs), result)
 
         call assert(same_type_as(op, add_strings_t()), "same_type_as(op, add_numbers_t())")
         call assert(same_type_as(result, sequence_value_t()), "same_type_as(result, sequence_value_t())")

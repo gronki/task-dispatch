@@ -15,24 +15,24 @@ module operation_m
 
     type, abstract :: operation_t
     contains
-        procedure(opname_proto), nopass, deferred :: name
         procedure(exec_proto), deferred :: exec
         procedure :: trace => trace_generic
         procedure :: exec_trace
-        procedure :: execf
         procedure, nopass :: args_match
         procedure, nopass :: is_elemental
+        procedure(opname_proto), nopass, deferred :: name
     end type
 
     public :: operation_t
 
     abstract interface
         subroutine exec_proto(op, inputs, output)
-            import :: value_item_t, operation_t, value_t
+            import :: value_ref_t, operation_t, value_t
             class(operation_t), intent(in) :: op
-            type(value_item_t), intent(in) :: inputs(:)
+            type(value_ref_t), intent(in) :: inputs(:)
             class(value_t), intent(out), allocatable :: output
         end subroutine
+
         pure function opname_proto() result(name)
             character(len=32) :: name
         end function
@@ -43,7 +43,7 @@ module operation_m
 contains
 
     pure function argument_sequence_lengths(inputs) result(sequence_lengths)
-        type(value_item_t), intent(in) :: inputs(:) !! operation inputs
+        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
         integer :: sequence_lengths(size(inputs))
 
         integer :: input_index, num_inputs
@@ -70,8 +70,9 @@ contains
 
     pure function sequence_lengths_are_correct(sequence_lengths)
         integer, intent(in) :: sequence_lengths(:)
-        integer, allocatable :: sequence_lengths_nonzero(:)
         logical :: sequence_lengths_are_correct
+
+        integer, allocatable :: sequence_lengths_nonzero(:)
         logical :: is_sequence(size(sequence_lengths))
         integer :: sequence_length
 
@@ -83,30 +84,21 @@ contains
         sequence_lengths_are_correct = all(sequence_lengths_nonzero == sequence_length)
     end function
 
-    pure subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs, only_update)
-        type(value_item_t), intent(in) :: inputs(:) !! operation inputs
-        type(value_item_t), intent(inout) :: temp_inputs(:) !! operation inputs
+    pure subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+        type(value_ref_t), intent(inout) :: temp_inputs(:) !! operation inputs
         integer, intent(in) :: sequence_index
-        logical, intent(in) :: only_update
         logical :: is_sequence(size(inputs))
         integer :: input_index, num_inputs
 
         num_inputs = size(inputs)
 
-        is_sequence = argument_sequence_lengths(inputs) > 0
-
-        if (.not. only_update) then
-            ! preallocate non-sequence arguments
-            do input_index = 1, num_inputs
-                if (.not. is_sequence(input_index)) &
-                    temp_inputs(input_index)%value = inputs(input_index)%value
-            end do
-        end if
-
         do input_index = 1, num_inputs
             select type(input_val => inputs(input_index)%value)
               class is (sequence_value_t)
-                temp_inputs(input_index)%value = input_val%items(sequence_index)%value
+                call temp_inputs(input_index) % refer( input_val%items(sequence_index)%value )
+              class default
+                call temp_inputs(input_index) % refer( input_val )
             end select
         end do
     end subroutine
@@ -119,27 +111,20 @@ contains
         !! you need to override this subroutine.
 
         class(operation_t), intent(in) :: op !! operation
-        type(value_item_t), intent(in) :: inputs(:) !! operation inputs
+        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
         class(value_t), allocatable, intent(out) :: output !! output to be allocated
 
-        type(value_item_t) :: temp_inputs(size(inputs))
+        type(value_ref_t) :: temp_inputs(size(inputs))
         integer :: sequence_lengths(size(inputs))
         integer :: input_index, sequence_index, sequence_length, num_inputs
         integer :: i
 
         num_inputs = size(inputs)
-
-        if (.not. op % is_elemental()) then
-            call op % exec(inputs, output)
-            output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
-            return
-        end if
-
         sequence_lengths = argument_sequence_lengths(inputs)
         sequence_length = maxval(sequence_lengths)
 
         ! here we handle a typical case, where none of the inputs is a sequence
-        if (sequence_length == 0) then
+        if (sequence_length == 0 .or. .not. op % is_elemental()) then
             call op % exec(inputs, output)
             output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
             return
@@ -164,7 +149,7 @@ contains
             sequence_output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
 
             do sequence_index = 1, sequence_length
-                call make_sequential_input_vector(inputs, sequence_index, temp_inputs, sequence_index > 1)
+                call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
                 associate (output_item => sequence_output%items(sequence_index))
                     call exec_trace(op, temp_inputs, output_item%value)
                     write (debug_output, *) ' sequence item ', sequence_index, ' ', &
@@ -175,13 +160,6 @@ contains
 
     end subroutine
 
-    function execf(op, inputs) result(output)
-        class(operation_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
-        class(value_t), allocatable :: output
-
-        call op % exec_trace(inputs, output)
-    end function
 
     function trace_generic(op, input_traces) result(output_trace)
         !! Produces a generic trace for any operation following
@@ -209,7 +187,7 @@ contains
     pure function args_match(inputs, labels)
         !! return true if the operation is able to handle
         !! the arguments given by the call
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         type(input_key_t), intent(in) :: labels(:)
         logical :: args_match
 

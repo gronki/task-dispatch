@@ -15,7 +15,7 @@ contains
 
     subroutine exec_multiply(op, inputs, output)
         class(multiply_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer :: i
         type(real_value_t) :: result

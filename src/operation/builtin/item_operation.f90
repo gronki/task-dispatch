@@ -21,7 +21,7 @@ contains
 
     subroutine exec_item(op, inputs, output)
         class(op_item_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer, allocatable :: indices(:)
         integer :: index_depth, i

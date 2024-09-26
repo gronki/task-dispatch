@@ -1,6 +1,6 @@
 module operation_database_m
 
-    use value_m, only: value_item_t
+    use value_m
     use operation_m
     use error_m
 
@@ -51,11 +51,11 @@ contains
 
     pure function is_operation_matching_sequence_safe(op, inputs, labels) result(matching)
         class(operation_t), intent(in) :: op !! operation
-        type(value_item_t), intent(in) :: inputs(:) !! inputs for matching the operation
+        type(value_ref_t), intent(in) :: inputs(:) !! inputs for matching the operation
         type(input_key_t), intent(in) :: labels(:) !! labels to inputs
         logical :: matching
         integer :: input_seq_len(size(inputs))
-        type(value_item_t) :: first_item(size(inputs))
+        type(value_ref_t) :: first_item(size(inputs))
 
         if (.not. op % is_elemental()) then
             matching = op % args_match(inputs, labels)
@@ -71,7 +71,7 @@ contains
 
         ! here we deal with sequence -- only check first element
 
-        call make_sequential_input_vector(inputs, 1, first_item, .false.)
+        call make_sequential_input_vector(inputs, 1, first_item)
         matching = op % args_match(first_item, labels)
 
     end function
@@ -129,7 +129,7 @@ contains
 
         type(operation_db_t), intent(in) :: operation_db !! operation catalog
         character(len=*), intent(in) :: opname !! operation name
-        type(value_item_t), intent(in) :: inputs(:) !! inputs for matching the operation
+        type(value_ref_t), intent(in) :: inputs(:) !! inputs for matching the operation
         type(input_key_t), intent(in) :: labels(:) !! labels to inputs
         class(operation_t), intent(inout), allocatable :: op !! allocatable operation
         type(err_t), intent(out), optional :: err !! error object

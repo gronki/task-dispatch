@@ -33,13 +33,13 @@ contains
     subroutine test_eval_namespace_fetch
 
         type(namespace_t) :: ns
-        type(value_item_t) :: result
+        class(value_t), allocatable :: result_value
 
         ns = get_test_ns()
 
-        call evaluate_expression(ast_expression(ast_symbol_ref_t("one")), result%value, ns)
+        call evaluate_expression(ast_expression(ast_symbol_ref_t("one")), result_value, ns)
 
-        select type (value => result % value)
+        select type (value => result_value)
           type is (real_value_t)
             if (value % value == 1.0_f64) return
         end select
@@ -51,7 +51,7 @@ contains
     subroutine test_eval_add
 
         type(namespace_t) :: ns
-        type(value_item_t) :: result
+        class(value_t), allocatable :: result_value
 
         ns = get_empty_ns()
 
@@ -59,9 +59,9 @@ contains
         &   ast_expression(add_t(), [ &
         &      ast_expression(real_value(1.0_f64)), &
         &      ast_expression(real_value(3.0_f64))  &
-        &   ]), result%value, ns)
+        &   ]), result_value, ns)
 
-        select type (value => result % value)
+        select type (value => result_value)
           type is (real_value_t)
             if (value % value == 4.0_f64) return
         end select
@@ -73,7 +73,7 @@ contains
     subroutine test_eval_add_fetch
 
         type(namespace_t) :: ns
-        type(value_item_t) :: result
+        class(value_t), allocatable :: result_value
 
         ns = get_test_ns()
 
@@ -81,9 +81,9 @@ contains
         &   ast_expression(add_t(), [ &
         &      ast_expression(real_value(1.0_f64)), &
         &      ast_expression(ast_symbol_ref_t("two"))  &
-        &   ]), result%value, ns)
+        &   ]), result_value, ns)
 
-        select type (value => result % value)
+        select type (value => result_value)
           type is (real_value_t)
             if (value % value == 3.0_f64) return
         end select

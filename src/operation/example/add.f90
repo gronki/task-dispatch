@@ -15,7 +15,7 @@ contains
 
     subroutine exec_add(op, inputs, output)
         class(add_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
         integer :: i
         type(real_value_t) :: result

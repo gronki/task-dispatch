@@ -15,7 +15,7 @@ contains
 
     subroutine exec_square(op, inputs, output)
         class(square_t), intent(in) :: op
-        type(value_item_t), intent(in) :: inputs(:)
+        type(value_ref_t), intent(in) :: inputs(:)
         class(value_t), intent(out), allocatable :: output
 
         if (size(inputs) /= 1) &
