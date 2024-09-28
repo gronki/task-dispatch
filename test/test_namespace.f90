@@ -5,7 +5,7 @@ program test_namespace
     use error_m
     implicit none (type, external)
 
-    type(namespace_t) :: ns
+    type(namespace_t), target :: ns
 
     print *, '*** TEST_NAMESPACE ***'
 
@@ -54,6 +54,26 @@ program test_namespace
             error stop 33
         end select
     end block test_override
+
+    test_ptr: block
+        class(value_t), pointer :: val
+        type(err_t) :: err
+
+        call ns % fetch_ptr("one", val, err)
+        if (check(err)) error stop 41
+
+        select type (val)
+          type is (real_value_t)
+            if (abs(val % value - 3) < 1e-4) then
+                print *, "OK"
+                exit test_ptr
+            end if
+            error stop 42
+          class default
+            error stop 43
+        end select
+    end block test_ptr
+
 contains
 
     function fetch_ns_value(ns, key) result(val)

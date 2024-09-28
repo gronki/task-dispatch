@@ -19,6 +19,7 @@ module namespace_m
         procedure :: push => namespace_push_value
         procedure :: move_in => namespace_move_value_in
         procedure :: fetch => namespace_fetch_value
+        procedure :: fetch_ptr => namespace_fetch_ptr
     end type
 
 contains
@@ -73,6 +74,28 @@ contains
                 if (.not. item % used) cycle
                 if (item % name == key) then
                     value = item%value
+                    return
+                end if
+            end associate
+        end do
+
+        call seterr(err, trim(key) // " not found")
+
+    end subroutine
+
+    pure subroutine namespace_fetch_ptr(namespace, key, ptr, err)
+        class(namespace_t), intent(inout), target :: namespace
+        character(len=*), intent(in) :: key
+        class(value_t), intent(out), pointer :: ptr
+        type(err_t), intent(out), optional :: err
+
+        integer :: i
+
+        do i = 1, size(namespace % items)
+            associate (item => namespace % items(i))
+                if (.not. item % used) cycle
+                if (item % name == key) then
+                    ptr => item % value
                     return
                 end if
             end associate
