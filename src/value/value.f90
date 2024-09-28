@@ -40,6 +40,8 @@ module value_m
         generic :: own => own_target, own_another_ref
         generic :: refer => refer_target, refer_another_ref
         procedure, private :: refer_target, refer_another_ref
+        generic :: alloc => alloc_from_target, alloc_from_another_ref
+        procedure, private :: alloc_from_target, alloc_from_another_ref
         procedure :: dealloc
     end type
 
@@ -100,7 +102,6 @@ contains
         error stop "no string representation for this value type. override to_str to implement"
     end function
 
-
     elemental function is_owner(ref)
         class(value_ref_t), intent(in) :: ref
         logical :: is_owner
@@ -112,11 +113,11 @@ contains
         character(len=:), allocatable :: str
 
         if (.not. associated(value_ref%value)) then
-            str = "&(null)"
+            str = "&<null>"
             return
         end if
 
-        str = "&(" // value_ref % value % to_str() // trim(merge(" owner)", ")      ", value_ref % owner))
+        str = "&" // trim(merge("<own>", "     ", value_ref % owner)) // value_ref % value % to_str()
 
     end function
 
@@ -124,7 +125,7 @@ contains
         class(value_ref_t), intent(inout) :: ref
 
         if (ref % owner .and. associated(ref % value)) then
-            ! write (debug_output, *) "DEALLOC", ref % to_str()
+            write (debug_output, *) " *DEALLOC* ", ref % to_str()
             deallocate(ref % value)
         end if
 
@@ -163,6 +164,22 @@ contains
 
         ref % value => another % value
         ref % owner = .false.
+    end subroutine
+
+    pure subroutine alloc_from_target(ref, tgt)
+        class(value_ref_t), intent(inout) :: ref
+        class(value_t), intent(inout), target :: tgt
+
+        allocate(ref % value, source=tgt)
+        ref % owner = .true.
+    end subroutine
+
+    pure subroutine alloc_from_another_ref(ref, another)
+        class(value_ref_t), intent(inout) :: ref
+        type(value_ref_t), intent(inout) :: another
+
+        allocate(ref % value, source = another % value)
+        ref % owner = .true.
     end subroutine
 
     impure elemental function item_to_ref(item) result(ref)
