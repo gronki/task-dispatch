@@ -84,10 +84,15 @@ contains
     end subroutine
 
     pure subroutine namespace_fetch_ptr(namespace, key, ptr, err)
+        !! Fetches pointer to value of item contained in a namespace.
         class(namespace_t), intent(inout), target :: namespace
+        !! Namespace - must be target!
         character(len=*), intent(in) :: key
+        !! Key
         class(value_t), intent(out), pointer :: ptr
+        !! Pointer to be associated with key value
         type(err_t), intent(out), optional :: err
+        !! Optional error object
 
         integer :: i
 
