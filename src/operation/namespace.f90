@@ -14,6 +14,7 @@ module namespace_m
     integer, parameter :: NAMESPACE_CAPACITY = 4096
 
     type namespace_t
+        !! suggestion: always create namespace with pointer/target attribute. 
         type(namespace_item_t) :: items(NAMESPACE_CAPACITY)
     contains
         procedure :: push => namespace_push_value

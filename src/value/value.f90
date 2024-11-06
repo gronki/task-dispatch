@@ -117,7 +117,7 @@ contains
             return
         end if
 
-        str = "&" // trim(merge("<own>", "     ", value_ref % owner)) // value_ref % value % to_str()
+        str = merge("$", "&", value_ref % owner) // value_ref % value % to_str()
 
     end function
 

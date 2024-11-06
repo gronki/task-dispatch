@@ -1,6 +1,7 @@
 module generator_m
 
     use value_m
+    use error_m
     implicit none (type, external)
     private
 
@@ -13,10 +14,11 @@ module generator_m
     public :: generator_t
 
     abstract interface
-        subroutine yield(gen, val)
-            import :: generator_t, value_ref_t
+        subroutine yield(gen, val, err)
+            import :: generator_t, value_t, err_t
             class(generator_t), intent(inout), target :: gen
-            class(value_ref_t), intent(out) :: val
+            class(value_t), allocatable, intent(out) :: val
+            type(err_t), intent(inout), optional :: err
         end subroutine
         function trace(gen)
             import :: generator_t, value_trace_t
@@ -31,6 +33,7 @@ module value_generator_m
 
     use generator_m
     use value_m
+    use error_m
     implicit none (type, external)
     private
 
@@ -45,14 +48,15 @@ module value_generator_m
 
 contains
 
-    subroutine yield(gen, val)
+    subroutine yield(gen, val, err)
         class(value_generator_t), intent(inout), target :: gen !! must be a target!
-        class(value_ref_t), intent(out) :: val
+        class(value_t), allocatable, intent(out) :: val
+        type(err_t), intent(inout), optional :: err
 
         if (.not. allocated(gen % val)) &
             error stop "uninitialized value in generator"
 
-        call val % refer(gen % val)
+        val = gen % val
     end subroutine
 
     function trace(gen)
@@ -71,6 +75,7 @@ module reference_generator_m
 
     use generator_m
     use value_m
+    use error_m
     implicit none (type, external)
     private
 
@@ -85,14 +90,15 @@ module reference_generator_m
 
 contains
 
-    subroutine yield(gen, val)
+    subroutine yield(gen, val, err)
         class(reference_generator_t), intent(inout), target :: gen !! must be a target!
-        class(value_ref_t), intent(out) :: val
+        class(value_t), allocatable, intent(out) :: val
+        type(err_t), intent(inout), optional :: err
 
         if (.not. associated(gen % val)) &
             error stop "uninitialized value reference in generator"
 
-        call val % refer(gen % val)
+        val = gen % val
     end subroutine
 
     function trace(gen)
@@ -112,6 +118,7 @@ module op_generator_m
     use generator_m
     use operation_m, only: input_key_t, operation_t
     use value_m
+    use error_m
     implicit none (type, external)
     private
 
@@ -132,13 +139,12 @@ module op_generator_m
 
 contains
 
-    subroutine yield(gen, val)
+    subroutine yield(gen, val, err)
         class(op_generator_t), intent(inout), target :: gen !! must be a target!
-        class(value_ref_t), intent(out) :: val
+        class(value_t), allocatable, intent(out) :: val
+        type(err_t), intent(inout), optional :: err
 
-        class(value_t), allocatable :: output_value
-
-        class(value_ref_t), allocatable :: evaluated_args(:)
+        type(value_item_t), allocatable, target :: evaluated_args(:)
         integer :: i, num_args
 
         if (.not. allocated(gen % args)) &
@@ -148,15 +154,10 @@ contains
         allocate(evaluated_args(num_args))
 
         do i = 1, num_args
-            call gen % args(i) % gen % yield(evaluated_args(i))
+            call gen % args(i) % gen % yield(evaluated_args(i) % value)
         end do
 
-        call gen%op%exec_trace(evaluated_args, output_value)
-        call val % alloc(output_value)
-
-        do i = 1, num_args
-            call evaluated_args(i) % dealloc
-        end do
+        call gen%op%exec_trace(item_to_ref(evaluated_args), val)
 
     end subroutine
 
@@ -202,10 +203,9 @@ module generator_from_ast_m
     implicit none (type, external)
     private
 
-    public :: build_generator
+    public :: build_generator, execute_statement_generator
 
 contains
-
 
     recursive subroutine build_generator(val_expr, gen, namespace, operation_db, err)
         type(ast_expression_t), intent(in) :: val_expr
@@ -215,29 +215,26 @@ contains
         type(err_t), intent(out), optional :: err
 
         type(op_generator_t), allocatable :: op_gen
-        type(value_generator_t), allocatable :: val_gen
-        type(reference_generator_t), allocatable :: ref_gen
 
         select case(val_expr % argtype)
 
           case (ARG_CONSTANT)
-            allocate(val_gen)
-            val_gen%val = val_expr%constant
-            call move_alloc(val_gen, gen)
+            gen = value_generator_t(val=val_expr%constant)
 
           case (ARG_REF)
-            associate (refname => val_expr % reference % refname)
-                if (.not. present(namespace)) then
-                    error stop "no namespace provided so reference cannot be resolved: " // trim(refname)
-                end if
-                allocate(ref_gen)
-                call namespace % fetch_ptr(refname, ref_gen%val, err)
+            if (.not. present(namespace)) then
+                error stop "no namespace provided so reference cannot be resolved: " // trim(val_expr % reference % refname)
+            end if
+
+            block
+                class(value_t), pointer :: fetched_ref
+                call namespace % fetch_ptr(val_expr % reference % refname, fetched_ref, err)
                 if (check(err)) then
                     call seterr(err, "here", loc=val_expr%loc)
                     return
                 end if
-                call move_alloc(ref_gen, gen)
-            end associate
+                gen = reference_generator_t(val=fetched_ref)
+            end block
 
           case (ARG_CALL)
             allocate(op_gen)
@@ -297,6 +294,34 @@ contains
             call move_alloc(op, gen % op)
 
         end associate
+    end subroutine
+
+
+    subroutine execute_statement_generator(stmt, result, namespace, operation_db, err)
+        type(ast_statement_t), intent(in) :: stmt
+        class(value_t), intent(out), allocatable :: result
+        type(namespace_t), intent(inout), optional :: namespace
+        type(operation_db_t), intent(in), optional :: operation_db
+        type(err_t), intent(out), optional :: err
+        class(generator_t), allocatable, target :: gen
+
+        call build_generator(stmt%rhs, gen, &
+            operation_db=operation_db, &
+            namespace=namespace, err=err)
+
+        if (check(err)) return
+
+        call gen % yield(result)
+        if (check(err)) return
+
+        if (.not. stmt%is_assignment) return
+
+        if (.not. present(namespace)) then
+            error stop "namespace required for assignment statements"
+        end if
+
+        call namespace%push(trim(stmt%lhs%refname), result, err)
+
     end subroutine
 
 end module
