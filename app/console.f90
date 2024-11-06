@@ -9,6 +9,7 @@ program test_console
     use example_operations_m
     use line_error_m
     use value_m
+    use generator_m
     use generator_from_ast_m, only: execute_statement_generator
 
     character(len=4096) :: line
@@ -18,6 +19,7 @@ program test_console
     type(err_t) :: err
     type(tok_array_t) :: tokens
     type(operation_db_t) :: operation_db
+    class(generator_t), allocatable, target :: gen
 
     operation_db = get_example_operation_db()
 
@@ -35,14 +37,16 @@ program test_console
             cycle
         end if
 
-        call execute_statement_generator(stmt, result, ns, operation_db, err)
+        call execute_statement_generator(stmt, ns, operation_db, gen, result, err)
 
         if (check(err)) then
             write(*, '(dt)') error_with_line(err, line)
             cycle
         end if
 
-        print *, "RESULT ::::::::::::::: ", result%get_trace(), " = ", result%to_str()
+        print *, "generator trace -> ", gen%trace()
+        print *, "result trace -> ", result%get_trace()
+        print *, " = ", result%to_str()
 
     end do
 end program

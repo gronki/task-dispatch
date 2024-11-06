@@ -297,7 +297,7 @@ contains
     end subroutine
 
 
-    subroutine execute_statement_generator(stmt, result, namespace, operation_db, err)
+    subroutine execute_statement_generator(stmt, namespace, operation_db, gen, result, err)
         type(ast_statement_t), intent(in) :: stmt
         class(value_t), intent(out), allocatable :: result
         type(namespace_t), intent(inout), optional :: namespace
