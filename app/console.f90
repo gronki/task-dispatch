@@ -12,6 +12,6 @@ program test_console
 
     operation_db = get_example_operation_db()
 
-    call run_interactive_console(simple_prompt, operation_db, namespace, err)
+    call run_interactive_console(simple_prompt_t(), operation_db, namespace, err)
  
 end program

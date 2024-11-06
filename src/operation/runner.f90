@@ -15,17 +15,32 @@ module runner_m
     implicit none (type, external)
     private
 
-    public :: run_interactive_console, simple_prompt
+    public :: run_interactive_console, simple_prompt_t
+
+    type, abstract :: console_prompt_t
+    contains
+        procedure(prompt_iface), deferred :: input
+    end type
 
     abstract interface
-        subroutine prompt_iface(line)
+        subroutine prompt_iface(prompt, line)
+            import :: console_prompt_t
+            class(console_prompt_t) :: prompt
             character(len=*), intent(out) :: line
         end subroutine
     end interface
 
+    public :: console_prompt_t
+
+    type, extends(console_prompt_t) :: simple_prompt_t
+    contains
+        procedure :: input => simple_prompt
+    end type
+
 contains
 
-    subroutine simple_prompt(line)
+    subroutine simple_prompt(prompt, line)
+        class(simple_prompt_t) :: prompt
         character(len=*), intent(out) :: line
         write (*, '(a)', advance='no') '> '
         read (*, '(a)') line
@@ -37,10 +52,10 @@ contains
         type(namespace_t), target :: namespace
         type(err_t), optional :: err
         type(operation_db_t) :: operation_db
-        procedure(prompt_iface) :: prompt
+        class(console_prompt_t) :: prompt
 
         do
-            call prompt(line)
+            call prompt % input(line)
             if (adjustl(line) == "exit") exit
             if (line == "") cycle
 
