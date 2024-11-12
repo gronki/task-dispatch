@@ -90,7 +90,7 @@ contains
         !! Namespace - must be target!
         character(len=*), intent(in) :: key
         !! Key
-        class(value_t), intent(out), pointer :: ptr
+        class(value_t), intent(inout), pointer :: ptr
         !! Pointer to be associated with key value
         type(err_t), intent(out), optional :: err
         !! Optional error object
