@@ -36,17 +36,10 @@ module value_m
         logical :: owner = .false.
     contains
         procedure :: to_str => value_ref_to_str
-        procedure, private :: own_target, own_another_ref
-        generic :: own => own_target, own_another_ref
-        generic :: refer => refer_target, refer_another_ref
-        procedure, private :: refer_target, refer_another_ref
-        generic :: alloc => alloc_from_target, alloc_from_another_ref
-        procedure, private :: alloc_from_target, alloc_from_another_ref
-        procedure :: dealloc
     end type
 
     public :: value_ref_t
-    public :: item_to_ref, ref_to_item
+    public :: item_to_ref, ref_to_item, move_dealloc_ref, move_ref, dealloc
 
 contains
 
@@ -102,12 +95,6 @@ contains
         error stop "no string representation for this value type. override to_str to implement"
     end function
 
-    elemental function is_owner(ref)
-        class(value_ref_t), intent(in) :: ref
-        logical :: is_owner
-        is_owner = ref % owner
-    end function
-
     function value_ref_to_str(value_ref) result(str)
         class(value_ref_t), intent(in) :: value_ref
         character(len=:), allocatable :: str
@@ -122,7 +109,7 @@ contains
     end function
 
     subroutine dealloc(ref)
-        class(value_ref_t), intent(inout) :: ref
+        type(value_ref_t), intent(inout) :: ref
 
         if (ref % owner .and. associated(ref % value)) then
             write (debug_output, *) " *DEALLOC* ", ref % to_str()
@@ -133,60 +120,30 @@ contains
         nullify(ref % value)
     end subroutine
 
-    pure subroutine own_target(ref, tgt)
-        class(value_ref_t), intent(inout) :: ref
-        class(value_t), intent(inout), target :: tgt
+    pure subroutine move_ref(from, to)
+        type(value_ref_t), intent(inout) :: from
+        type(value_ref_t), intent(inout) :: to
 
-        ref % value => tgt
-        ref % owner = .true.
+        to % value => from % value
+        to % owner = from % owner
+        from % owner = .false.
     end subroutine
 
-    pure subroutine own_another_ref(ref, another)
-        class(value_ref_t), intent(inout) :: ref
-        type(value_ref_t), intent(inout) :: another
+    subroutine move_dealloc_ref(from, to)
+        type(value_ref_t), intent(inout) :: from
+        type(value_ref_t), intent(inout) :: to
 
-        ref % value => another % value
-        ref % owner = another % owner
-        another % owner = .false.
-    end subroutine
+        if (.not. associated(to % value, from % value) .and. to % owner) &
+            call dealloc(to)
 
-    pure subroutine refer_target(ref, tgt)
-        class(value_ref_t), intent(inout) :: ref
-        class(value_t), intent(inout), target :: tgt
-
-        ref % value => tgt
-        ref % owner = .false.
-    end subroutine
-
-    pure subroutine refer_another_ref(ref, another)
-        class(value_ref_t), intent(inout) :: ref
-        type(value_ref_t), intent(inout) :: another
-
-        ref % value => another % value
-        ref % owner = .false.
-    end subroutine
-
-    pure subroutine alloc_from_target(ref, tgt)
-        class(value_ref_t), intent(inout) :: ref
-        class(value_t), intent(inout), target :: tgt
-
-        allocate(ref % value, source=tgt)
-        ref % owner = .true.
-    end subroutine
-
-    pure subroutine alloc_from_another_ref(ref, another)
-        class(value_ref_t), intent(inout) :: ref
-        type(value_ref_t), intent(inout) :: another
-
-        allocate(ref % value, source = another % value)
-        ref % owner = .true.
+        call move_ref(from, to)
     end subroutine
 
     impure elemental function item_to_ref(item) result(ref)
         type(value_item_t), intent(inout), target :: item
         type(value_ref_t) :: ref
 
-        call ref % refer(item % value)
+        ref % value => item % value
     end function
 
     impure elemental subroutine ref_to_item(ref, item)

@@ -9,7 +9,7 @@ module operation_m
     type input_key_t
         logical :: has_key = .false.
         character(len=32) :: key = ""
-    end type
+    end type input_key_t
 
     public :: input_key_t
 
@@ -21,7 +21,7 @@ module operation_m
         procedure, nopass :: args_match
         procedure, nopass :: is_elemental
         procedure(opname_proto), nopass, deferred :: name
-    end type
+    end type operation_t
 
     public :: operation_t
 
@@ -31,11 +31,11 @@ module operation_m
             class(operation_t), intent(in) :: op
             type(value_ref_t), intent(in) :: inputs(:)
             class(value_t), intent(out), allocatable :: output
-        end subroutine
+        end subroutine exec_proto
 
         pure function opname_proto() result(name)
             character(len=32) :: name
-        end function
+        end function opname_proto
     end interface
 
     public :: argument_sequence_lengths, sequence_lengths_are_correct, make_sequential_input_vector
@@ -66,7 +66,7 @@ contains
             end select
         end do
 
-    end function
+    end function argument_sequence_lengths
 
     pure function sequence_lengths_are_correct(sequence_lengths)
         integer, intent(in) :: sequence_lengths(:)
@@ -82,9 +82,9 @@ contains
         sequence_lengths_nonzero = pack(sequence_lengths, is_sequence)
         sequence_length = sequence_lengths_nonzero(1)
         sequence_lengths_are_correct = all(sequence_lengths_nonzero == sequence_length)
-    end function
+    end function sequence_lengths_are_correct
 
-    pure subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+    subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
         type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
         type(value_ref_t), intent(inout) :: temp_inputs(:) !! operation inputs
         integer, intent(in) :: sequence_index
@@ -96,12 +96,12 @@ contains
         do input_index = 1, num_inputs
             select type(input_val => inputs(input_index)%value)
               class is (sequence_value_t)
-                call temp_inputs(input_index) % refer( input_val%items(sequence_index)%value )
+                temp_inputs(input_index) % value => input_val%items(sequence_index)%value
               class default
-                call temp_inputs(input_index) % refer( input_val )
+                temp_inputs(input_index) % value => input_val
             end select
         end do
-    end subroutine
+    end subroutine make_sequential_input_vector
 
     recursive subroutine exec_trace(op, inputs, output)
         !! Execute the operation and handle value tracing
@@ -153,12 +153,12 @@ contains
                 associate (output_item => sequence_output%items(sequence_index))
                     call exec_trace(op, temp_inputs, output_item%value)
                     write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-                        output_item%value % get_trace(), ' ---> ',  output_item%value%to_str()
+                        output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
                 end associate
             end do
         end select
 
-    end subroutine
+    end subroutine exec_trace
 
 
     function trace_generic(op, input_traces) result(output_trace)
@@ -182,7 +182,7 @@ contains
                     // adjustl(trim(merge(" ,", "} ", i < num_inputs)))
             end associate
         end do
-    end function
+    end function trace_generic
 
     pure function args_match(inputs, labels)
         !! return true if the operation is able to handle
@@ -192,7 +192,7 @@ contains
         logical :: args_match
 
         args_match = .true.
-    end function
+    end function args_match
 
     pure function is_elemental()
         !! return true if the operation should be performed
@@ -200,5 +200,5 @@ contains
         logical :: is_elemental
 
         is_elemental = .true.
-    end function
-end module
+    end function is_elemental
+end module operation_m
