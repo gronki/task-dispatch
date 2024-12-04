@@ -21,7 +21,7 @@ program test_parser
         expr = parse("a", err)
 
         call assertm(expr%argtype == ARG_REF)
-        call assertm(expr%reference%refname == 'a')
+        call assertm(expr%refname == 'a')
     end block
 
 
@@ -32,11 +32,11 @@ program test_parser
         expr = parse("fun(3)", err)
 
         call assertm(expr%argtype == ARG_CALL)
-        call assertm(expr%op_call%opname == 'fun')
-        call assertm(size(expr%op_call%args) == 1)
-        call assertm(expr%op_call%args(1)%argtype == ARG_CONSTANT)
+        call assertm(expr%op_name == 'fun')
+        call assertm(size(expr%op_args) == 1)
+        call assertm(expr%op_args(1)%argtype == ARG_CONSTANT)
 
-        select type (val=>expr%op_call%args(1)%constant)
+        select type (val=>expr%op_args(1)%constant)
           type is (real_value_t)
             call assertm(abs(val%value-3) < 1e-5)
           class default
@@ -52,13 +52,13 @@ program test_parser
         expr = parse("f(1)%g(2)", err)
 
         call assertm(expr%argtype == ARG_CALL)
-        call assertm(expr%op_call%opname == 'g')
-        call assertm(size(expr%op_call%args) == 2)
-        associate (first_arg => expr%op_call%args(1))
+        call assertm(expr%op_name == 'g')
+        call assertm(size(expr%op_args) == 2)
+        associate (first_arg => expr%op_args(1))
             call assertm(first_arg%argtype == ARG_CALL)
-            call assertm(first_arg%op_call%opname == 'f')
-            call assertm(size(first_arg%op_call%args) == 1)
-            associate (first_first_arg => first_arg%op_call%args(1))
+            call assertm(first_arg%op_name == 'f')
+            call assertm(size(first_arg%op_args) == 1)
+            associate (first_first_arg => first_arg%op_args(1))
                 call assertm(first_first_arg%argtype == ARG_CONSTANT)
                 select type (val=>first_first_arg%constant)
                   type is (real_value_t)
@@ -68,7 +68,7 @@ program test_parser
                 end select
             end associate
         end associate
-        associate (second_arg => expr%op_call%args(2))
+        associate (second_arg => expr%op_args(2))
             call assertm(second_arg%argtype == ARG_CONSTANT)
             select type (val=>second_arg%constant)
               type is (real_value_t)

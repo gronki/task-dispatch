@@ -5,16 +5,16 @@ module generator_m
     implicit none(type, external)
     private
 
-    type :: generator_t
+    type, abstract :: generator_t
     contains
-        procedure :: yield
-        procedure :: trace
+        procedure(yield), deferred :: yield
+        procedure(trace), deferred :: trace
     end type generator_t
 
     public :: generator_t
 
     abstract interface
-        subroutine yield(gen, val, err)
+        recursive subroutine yield(gen, val, err)
             import :: generator_t, value_t, err_t
             class(generator_t), intent(inout), target :: gen
             class(value_t), allocatable, intent(out) :: val
@@ -50,7 +50,7 @@ module value_generator_m
 
 contains
 
-    subroutine yield(gen, val, err)
+    recursive subroutine yield(gen, val, err)
         class(value_generator_t), intent(inout), target :: gen !! must be a target!
         class(value_t), allocatable, intent(out) :: val
         type(err_t), intent(inout), optional :: err
@@ -94,7 +94,7 @@ module reference_generator_m
 
 contains
 
-    subroutine yield(gen, val, err)
+    recursive subroutine yield(gen, val, err)
         class(reference_generator_t), intent(inout), target :: gen !! must be a target!
         class(value_t), allocatable, intent(out) :: val
         type(err_t), intent(inout), optional :: err
@@ -145,7 +145,7 @@ module op_generator_m
 
 contains
 
-    subroutine yield(gen, val, err)
+    recursive subroutine yield(gen, val, err)
         class(op_generator_t), intent(inout), target :: gen !! must be a target!
         class(value_t), allocatable, intent(out) :: val
         type(err_t), intent(inout), optional :: err
@@ -232,12 +232,12 @@ contains
 
           case (ARG_REF)
             if (.not. present(namespace)) then
-                error stop "no namespace provided so reference cannot be resolved: "//trim(val_expr % reference % refname)
+                error stop "no namespace provided so reference cannot be resolved: "//trim(val_expr % refname)
             end if
 
             block
                 class(value_t), pointer :: fetched_ref
-                call namespace % fetch_ptr(val_expr % reference % refname, fetched_ref, err)
+                call namespace % fetch_ptr(val_expr % refname, fetched_ref, err)
                 if (check(err)) then
                     call seterr(err, "here", loc=val_expr % loc)
                     return
@@ -268,40 +268,37 @@ contains
         type(op_generator_t_arg_t), allocatable :: args(:)
         integer :: i, nr_args
 
-        associate (op_call => val_expr % op_call)
+        nr_args = size(val_expr % op_args)
 
-            nr_args = size(op_call % args)
+        allocate (args(nr_args))
+        do i = 1, nr_args
+            args(i) % key = val_expr % op_arg_keys(i)
+            call build_generator(val_expr % op_args(i), args(i) % gen, namespace, operation_db, err)
+            if (check(err)) return
+        end do
 
-            allocate (args(nr_args))
-            do i = 1, nr_args
-                args(i) % key = op_call % keys(i)
-                call build_generator(op_call % args(i), args(i) % gen, namespace, operation_db, err)
-                if (check(err)) return
-            end do
-
-            if (allocated(op_call % op)) then
-                ! sometimes in testing/debugging we might use allocated operations
-                allocate (op, source=op_call % op)
-            else
-                if (.not. present(operation_db)) then
-                    error stop "could not resolve operation since database not provided: "//trim(op_call % opname)
-                end if
-                ! TODO: not sure how to solve this one. perhaps operations could return a dummy
-                ! value just for the sake of indentifying the type? this would be much cleaner
-                ! wayh of performing gthe operation matching without needing to write
-                ! my own type system.
-                call fetch_operation(operation_db, op_call % opname, op, err)
-
-                if (check(err)) then
-                    call seterr(err, "here", val_expr % loc)
-                    return
-                end if
+        if (allocated(val_expr % op)) then
+            ! sometimes in testing/debugging we might use allocated operations
+            allocate (op, source=val_expr % op)
+        else
+            if (.not. present(operation_db)) then
+                error stop "could not resolve operation since database not provided: "//trim(val_expr % op_name)
             end if
+            ! TODO: not sure how to solve this one. perhaps operations could return a dummy
+            ! value just for the sake of indentifying the type? this would be much cleaner
+            ! wayh of performing gthe operation matching without needing to write
+            ! my own type system.
+            call fetch_operation(operation_db, val_expr % op_name, op, err)
 
-            call move_alloc(args, gen % args)
-            call move_alloc(op, gen % op)
+            if (check(err)) then
+                call seterr(err, "here", val_expr % loc)
+                return
+            end if
+        end if
 
-        end associate
+        call move_alloc(args, gen % args)
+        call move_alloc(op, gen % op)
+
     end subroutine
 
     subroutine execute_statement_generator(stmt, namespace, operation_db, gen, result, err)
@@ -327,7 +324,7 @@ contains
             error stop "namespace required for assignment statements"
         end if
 
-        call namespace % push(trim(stmt % lhs % refname), result, err)
+        call namespace % push(trim(stmt % lhs_refname), result, err)
 
     end subroutine
 

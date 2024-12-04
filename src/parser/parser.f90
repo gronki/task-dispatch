@@ -3,6 +3,7 @@ module parser_m
     use tokenizer_m
     use command_m
     use str_value_m
+    use operation_m
     use real_value_m
     use error_m
     use line_error_m
@@ -68,27 +69,25 @@ contains
                 return
             end if
 
-            associate (op_call => expr%op_call)
-                block
-                    type(ast_expression_t), allocatable :: oldargs(:)
-                    type(input_key_t), allocatable :: oldkeys(:)
-                    integer :: num_current_args
+            block
+                type(ast_expression_t), allocatable :: oldargs(:)
+                type(input_key_t), allocatable :: oldkeys(:)
+                integer :: num_current_args
 
-                    num_current_args = size(op_call%args)
-                    call move_alloc(from=op_call%args, to=oldargs)
-                    call move_alloc(from=op_call%keys, to=oldkeys)
+                num_current_args = size(expr%op_args)
+                call move_alloc(from=expr%op_args, to=oldargs)
+                call move_alloc(from=expr%op_arg_keys, to=oldkeys)
 
-                    allocate(op_call%args(num_current_args+1))
-                    allocate(op_call%keys(num_current_args+1))
+                allocate(expr%op_args(num_current_args+1))
+                allocate(expr%op_arg_keys(num_current_args+1))
 
-                    op_call%args(1) = child_expr
-                    op_call%keys(1) = input_key_t(has_key=.false.)
-                    if (size(op_call%args) > 1) then
-                        op_call%args(2:) = oldargs
-                        op_call%keys(2:) = oldkeys
-                    end if
-                end block
-            end associate
+                expr%op_args(1) = child_expr
+                expr%op_arg_keys(1) = input_key_t(has_key=.false.)
+                if (size(expr%op_args) > 1) then
+                    expr%op_args(2:) = oldargs
+                    expr%op_arg_keys(2:) = oldkeys
+                end if
+            end block
 
 
         end do iter_chain
@@ -104,14 +103,14 @@ contains
         call get_current_token(tokens, token)
 
         if (token%type == token_num_literal) then
-            expr = ast_expression(real_value(token%value), loc=token%loc)
+            expr = ast_expression_t(value=real_value(token%value), loc=token%loc)
             expr % loc = token % loc ! why is this needed?
             call get_next_token(tokens)
             return
         end if
 
         if (token%type == token_str_literal) then
-            expr = ast_expression(str_value(token%value), loc=token%loc)
+            expr = ast_expression_t(value=str_value(token%value), loc=token%loc)
             expr % loc = token % loc ! why is this needed?
             call get_next_token(tokens)
             return
@@ -126,19 +125,20 @@ contains
 
         call get_next_token(tokens, token)
         if (token /= token_t(type=token_delim, value="(")) then
-            expr = ast_expression(ast_symbol_ref_t(refname=ident_token%value), loc=ident_token%loc)
+            expr = ast_expression_t(refname=ident_token%value, loc=ident_token%loc)
             expr % loc = ident_token % loc ! why is this needed?
             return
         end if
 
         ! function call
         parse_function_call: block
-            type(ast_operation_call_t) :: opcall
             integer, parameter :: max_args = 16
+            type(ast_expression_t) :: op_args(max_args)
+            type(input_key_t) :: op_arg_keys(max_args)
+            character(len=64) :: opname
             integer :: num_args
 
-            opcall%opname = ident_token%value
-            allocate(opcall%args(max_args), opcall%keys(max_args))
+            opname = ident_token%value
 
             num_args = 0
 
@@ -156,7 +156,7 @@ contains
                     return
                 end if
 
-                call parse_function_argument(tokens, opcall%args(num_args), opcall%keys(num_args), err)
+                call parse_function_argument(tokens, op_args(num_args), op_arg_keys(num_args), err)
                 if (check(err)) return
 
                 call get_current_token(tokens, token)
@@ -172,10 +172,7 @@ contains
                 end if
             end do iter_args
 
-            opcall%args = opcall%args(:num_args)
-            opcall%keys = opcall%keys(:num_args)
-
-            expr = ast_expression(opcall, loc=ident_token%loc)
+            expr = ast_expression_t(opname, op_args(:num_args), op_arg_keys(:num_args), loc=ident_token%loc)
             expr % loc = ident_token % loc ! why is this needed?
             return
 
@@ -213,7 +210,7 @@ contains
 
         if (token1 % type == TOKEN_IDENT .and. token2 == token_t(type=token_delim, value="=")) then
             statement % is_assignment = .true.
-            statement % lhs = ast_symbol_ref_t(refname=token1%value)
+            statement % lhs_refname = token1%value
             call get_next_token(tokens)
             call get_next_token(tokens)
         end if

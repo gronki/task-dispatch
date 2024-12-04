@@ -27,9 +27,9 @@ program test_parse_statement
 
         call assertm(.not. check(err))
         call assertm(stmt%is_assignment)
-        call assertm(stmt%lhs%refname == 'a')
+        call assertm(stmt%lhs_refname == 'a')
         call assertm(stmt%rhs%argtype == ARG_CALL)
-        call assertm(stmt%rhs%op_call%opname == 'sum')
+        call assertm(stmt%rhs%op_name == 'sum')
 
     end block
 
@@ -45,7 +45,7 @@ program test_parse_statement
         call assertm(.not. check(err))
         call assertm(.not. stmt%is_assignment)
         call assertm(stmt%rhs%argtype == ARG_CALL)
-        call assertm(stmt%rhs%op_call%opname == 'mul')
+        call assertm(stmt%rhs%op_name == 'mul')
 
     end block
 

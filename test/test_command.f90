@@ -37,7 +37,7 @@ contains
 
         ns = get_test_ns()
 
-        call evaluate_expression(ast_expression(ast_symbol_ref_t("one")), result_value, ns)
+        call evaluate_expression(ast_expression_t(refname="one"), result_value, ns)
 
         select type (value => result_value)
           type is (real_value_t)
@@ -56,9 +56,9 @@ contains
         ns = get_empty_ns()
 
         call evaluate_expression( &
-        &   ast_expression(add_t(), [ &
-        &      ast_expression(real_value(1.0_f64)), &
-        &      ast_expression(real_value(3.0_f64))  &
+        &   ast_expression_t(add_t(), [ &
+        &      ast_expression_t(real_value(1.0_f64)), &
+        &      ast_expression_t(real_value(3.0_f64))  &
         &   ]), result_value, ns)
 
         select type (value => result_value)
@@ -78,9 +78,9 @@ contains
         ns = get_test_ns()
 
         call evaluate_expression( &
-        &   ast_expression(add_t(), [ &
-        &      ast_expression(real_value(1.0_f64)), &
-        &      ast_expression(ast_symbol_ref_t("two"))  &
+        &   ast_expression_t(add_t(), [ &
+        &      ast_expression_t(real_value(1.0_f64)), &
+        &      ast_expression_t(refname="two")  &
         &   ]), result_value, ns)
 
         select type (value => result_value)

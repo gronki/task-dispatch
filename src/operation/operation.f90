@@ -170,18 +170,18 @@ contains
         type(value_trace_t), intent(in) :: input_traces(:)
         !> string trace
         type(value_trace_t) :: output_trace
+        character(len=4096) :: buf
         integer :: i, num_inputs
 
         num_inputs = size(input_traces)
-        output_trace % str = "@" // trim(op % name()) // "{"
 
-        do i = 1, num_inputs
-            associate (arg_trace => input_traces(i))
-                output_trace % str = output_trace % str &
-                    // trim(arg_trace % str) &
-                    // adjustl(trim(merge(" ,", "} ", i < num_inputs)))
-            end associate
-        end do
+        ! TODO: with Fortran 2023 standard, the variable can be automatically allocated
+        write (buf, '(a, *(a))') "@" // trim(op % name()) // "{", &
+            ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", "} ", i < num_inputs))), &
+            i = 1, num_inputs )
+
+        output_trace % str = trim(buf)
+
     end function trace_generic
 
     pure function args_match(inputs, labels)

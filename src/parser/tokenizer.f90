@@ -20,9 +20,7 @@ module tokenizer_m
         generic :: read(formatted) => token_loc_read_fmt
     end type
 
-    character(len=*), parameter :: token_loc_fmt = '("L",i5.5,"C",i3.3)'
-    
-    private :: token_loc_write_fmt, token_loc_read_fmt, token_loc_fmt
+    private :: token_loc_write_fmt, token_loc_read_fmt
 
     type, public :: token_t
         integer :: type = token_none
@@ -335,9 +333,13 @@ contains
         character(len=*), intent(inout) :: iomsg
         character(len=80) :: buffer
         integer :: i
+        character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,x,a1,i3.3,a1)'
 
         write(unit, fmt=token_loc_fmt, iostat=iostat, iomsg=iomsg) &
-            max(loc%line, 0), max(loc%offset, 0)
+           "L", max(loc%line, 0), "C", max(loc%offset, 0), ":"
+        ! We add an extra character because gfortran 14 seems to
+        ! have a bug causing the last character to be lost
+        ! on reading by DTIO.
     end subroutine
 
     subroutine token_loc_read_fmt(loc,unit,iotype,v_list,iostat,iomsg)
@@ -349,9 +351,19 @@ contains
         character(len=*), intent(inout) :: iomsg
         character(len=80) :: buffer
         integer :: i
+        character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,x,a1,i3.3,x)'
 
+        character(len=1) :: read_l, read_c
+        
         read(unit, fmt=token_loc_fmt, iostat=iostat, iomsg=iomsg) &
-            loc%line, loc%offset
+            read_l, loc%line, read_c, loc%offset
+        if (iostat /= 0) return
+
+        if (read_l /= "L" .or. read_c /= "C") then
+            iostat = 1
+            iomsg = "Incorrect format! Expected: L00000 C000"
+        end if
+
     end subroutine
 
 end module

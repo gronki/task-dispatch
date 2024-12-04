@@ -29,7 +29,7 @@ contains
             result_value = val_expr % constant
 
           case (ARG_REF)
-            associate (refname => val_expr % reference % refname)
+            associate (refname => val_expr % refname)
                 if (.not. present(namespace)) then
                     error stop "no namespace provided so reference cannot be resolved: " // trim(refname)
                 end if
@@ -63,38 +63,35 @@ contains
         type(value_item_t), allocatable, target :: arg_values(:)
         integer :: i, nr_args
 
-        associate(op_call => val_expr%op_call)
+        nr_args = size(val_expr % op_args)
 
-            nr_args = size(op_call % args)
+        allocate(arg_values(nr_args))
+        do i = 1, nr_args
+            call evaluate_expression(val_expr % op_args(i), arg_values(i) % value, namespace, operation_db, err)
+            if (check(err)) return
+        end do
 
-            allocate(arg_values(nr_args))
-            do i = 1, nr_args
-                call evaluate_expression(op_call % args(i), arg_values(i)%value, namespace, operation_db, err)
-                if (check(err)) return
-            end do
-
-            if (allocated(op_call%op)) then
-                ! sometimes in testing/debugging we might use allocated operations
-                allocate(op, source=op_call%op)
-            else
-                if (.not. present(operation_db)) then
-                    error stop "could not resolve operation since database not provided: " // trim(op_call%opname)
-                end if
-                call fetch_operation(operation_db, op_call%opname, op, err)
-                if (check(err)) then
-                    call seterr(err, "here", val_expr%loc)
-                    return
-                end if
+        if (allocated(val_expr % op)) then
+            ! sometimes in testing/debugging we might use allocated operations
+            allocate(op, source=val_expr % op)
+        else
+            if (.not. present(operation_db)) then
+                error stop "could not resolve operation since database not provided: " // trim(val_expr%op_name)
             end if
+            call fetch_operation(operation_db, val_expr % op_name, op, err)
+            if (check(err)) then
+                call seterr(err, "here", val_expr % loc)
+                return
+            end if
+        end if
 
-            write (*,*) 'TRACE ', op%trace([(arg_values(i) % value % get_trace(), i = 1, nr_args)])
+        write (*,*) 'TRACE ', op % trace([(arg_values(i) % value % get_trace(), i = 1, nr_args)])
 
-            ! here should be checked if this call result is already cached
-            ! if not, execute the operation and cache the result
-            call op % exec_trace(item_to_ref(arg_values), result_value)
-            ! call namespace % set_cached(result % value)
+        ! here should be checked if this call result is already cached
+        ! if not, execute the operation and cache the result
+        call op % exec_trace(item_to_ref(arg_values), result_value)
+        ! call namespace % set_cached(result % value)
 
-        end associate
     end subroutine
 
     subroutine execute_statement(stmt, result_value, namespace, operation_db, err)
@@ -113,7 +110,7 @@ contains
             error stop "namespace required for assignment statements"
         end if
 
-        call namespace%push(trim(stmt%lhs%refname), result_value, err)
+        call namespace%push(trim(stmt % lhs_refname), result_value, err)
 
     end subroutine
 
