@@ -53,11 +53,11 @@ program test_parser
 
         call assertm(expr%argtype == ARG_CALL)
         call assertm(expr%op_name == 'g')
-        call assertm(size(expr%op_args) == 2)
+        call assertm(expr%num_args == 2)
         associate (first_arg => expr%op_args(1))
             call assertm(first_arg%argtype == ARG_CALL)
             call assertm(first_arg%op_name == 'f')
-            call assertm(size(first_arg%op_args) == 1)
+            call assertm(first_arg%num_args == 1)
             associate (first_first_arg => first_arg%op_args(1))
                 call assertm(first_first_arg%argtype == ARG_CONSTANT)
                 select type (val=>first_first_arg%constant)

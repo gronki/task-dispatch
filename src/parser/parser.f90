@@ -41,8 +41,8 @@ contains
 
     recursive subroutine parse_expression(tokens, expr, err)
         type(tok_array_t), intent(inout) :: tokens
-        type(ast_expression_t), intent(out) :: expr
-        type(ast_expression_t) :: child_expr
+        type(ast_expression_t), intent(inout) :: expr
+        type(ast_expression_t), allocatable :: child_expr
         type(token_t) :: token
         type(err_t), intent(out), optional :: err
         integer :: pivot
@@ -70,25 +70,32 @@ contains
             end if
 
             block
-                type(ast_expression_t), allocatable :: oldargs(:)
-                type(input_key_t), allocatable :: oldkeys(:)
-                integer :: num_current_args
+                type(ast_expression_t), allocatable :: following_expr
+                integer :: num_current_args, iarg
 
-                num_current_args = size(expr%op_args)
-                call move_alloc(from=expr%op_args, to=oldargs)
-                call move_alloc(from=expr%op_arg_keys, to=oldkeys)
+                num_current_args = expr % num_args
+                following_expr = expr
 
+                ! this whole section could be nicely written using the array
+                ! concatenation syntax, but ifx crashes from that :(
+                if (allocated(expr % op_args)) deallocate(expr % op_args)
                 allocate(expr%op_args(num_current_args+1))
+                if (allocated(expr % op_arg_keys)) deallocate(expr % op_arg_keys)
                 allocate(expr%op_arg_keys(num_current_args+1))
 
                 expr%op_args(1) = child_expr
                 expr%op_arg_keys(1) = input_key_t(has_key=.false.)
-                if (size(expr%op_args) > 1) then
-                    expr%op_args(2:) = oldargs
-                    expr%op_arg_keys(2:) = oldkeys
-                end if
-            end block
+                
+                do iarg = 2, num_current_args + 1
+                    expr % op_args(iarg) = following_expr % op_args(iarg-1)
+                    expr % op_arg_keys(iarg) = following_expr % op_arg_keys(iarg-1)
+                end do
 
+                deallocate( following_expr )
+
+                expr % num_args = num_current_args + 1
+
+            end block
 
         end do iter_chain
 
@@ -96,7 +103,7 @@ contains
 
     recursive subroutine parse_recursive(tokens, expr, err)
         type(tok_array_t), intent(inout) :: tokens
-        type(ast_expression_t), intent(out) :: expr
+        type(ast_expression_t), intent(inout) :: expr
         type(token_t) :: token, ident_token
         type(err_t), intent(out), optional :: err !! error object
 
@@ -172,7 +179,11 @@ contains
                 end if
             end do iter_args
 
-            expr = ast_expression_t(opname, op_args(:num_args), op_arg_keys(:num_args), loc=ident_token%loc)
+            if (num_args > 0) then
+                expr = ast_expression_t(opname, num_args, args=op_args(:num_args), keys=op_arg_keys(:num_args), loc=ident_token%loc)
+            else
+                expr = ast_expression_t(opname, num_args, loc=ident_token%loc)
+            end if
             expr % loc = ident_token % loc ! why is this needed?
             return
 

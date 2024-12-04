@@ -52,7 +52,7 @@ contains
         character(len=*), intent(inout) :: iomsg
 
         if (allocated(trace%str)) then
-            write(unit, fmt='(a)', iostat=iostat, iomsg=iomsg)  trace % str
+            write(unit, fmt='(a)', iostat=iostat, iomsg=iomsg)  trim(trace % str)
         end if
 
     end subroutine

@@ -18,6 +18,8 @@ module ast_m
         character(len=64) :: refname
         ! -- operation call --
         character(len=32) :: op_name
+        integer :: num_args
+        ! note: if num_args==0, below two arrays may be unallocated
         type(ast_expression_t), allocatable :: op_args(:)
         type(input_key_t), allocatable :: op_arg_keys(:)
         ! sometimes for debugging we might want to provide an operation
@@ -64,35 +66,50 @@ contains
         if (present(loc)) val_expr % loc = loc
     end function
 
-    function ast_expr_op_args(op, args, keys, loc) result(val_expr)
+    function ast_expr_op_args(op, num_args, args, keys, loc) result(val_expr)
         class(operation_t), intent(in) :: op
-        type(ast_expression_t), intent(in) :: args(:)
+        integer, intent(in) :: num_args
+        type(ast_expression_t), intent(in), optional :: args(:)
         type(input_key_t), intent(in), optional :: keys(:)
         type(token_loc_t), intent(in), optional :: loc
         type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op, source=op)
+        val_expr % num_args = num_args
+        if (present(loc)) val_expr % loc = loc
+        
+        if (num_args == 0) return
+        if (.not. present(args)) error stop "args required when num_args>0"
+        
         allocate(val_expr % op_args, source=args)
+        
         if (present(keys)) then
             allocate(val_expr % op_arg_keys, source=keys)
         else
             allocate(val_expr % op_arg_keys(size(args)))
             val_expr % op_arg_keys % has_key = .false.
         end if
-        if (present(loc)) val_expr % loc = loc
     end function
     
-    function ast_expr_op_name_args(op_name, args, keys, loc) result(val_expr)
+    function ast_expr_op_name_args(op_name, num_args, args, keys, loc) result(val_expr)
         character(len=*), intent(in) :: op_name
-        type(ast_expression_t), intent(in) :: args(:)
+        integer, intent(in) :: num_args
+        type(ast_expression_t), intent(in), optional :: args(:)
         type(input_key_t), intent(in), optional :: keys(:)
         type(token_loc_t), intent(in), optional :: loc
         type(ast_expression_t) :: val_expr
 
         val_expr % argtype = ARG_CALL
         val_expr % op_name = op_name
+        val_expr % num_args = num_args
+        if (present(loc)) val_expr % loc = loc
+        
+        if (num_args == 0) return
+        if (.not. present(args)) error stop "args required when num_args>0"
+        
         allocate(val_expr % op_args, source=args)
+        
         if (present(keys)) then
             allocate(val_expr % op_arg_keys, source=keys)
         else

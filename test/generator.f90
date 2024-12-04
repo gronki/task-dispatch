@@ -21,9 +21,9 @@ contains
         class(generator_t), allocatable, target :: gen
         class(value_t), allocatable :: result
 
-        gen = op_generator_t(op=multiply_t(), args=[ &
+        gen = op_generator_t(op=multiply_t(), num_args=2, args=[ &
             op_generator_t_arg_t(gen=value_generator_t(val=real_value(2.0_real_k))), &
-            op_generator_t_arg_t(gen=op_generator_t(op=add_t(), args=[&
+            op_generator_t_arg_t(gen=op_generator_t(op=add_t(), num_args=2, args=[&
             op_generator_t_arg_t(gen=value_generator_t(val=real_value(1.0_real_k))), &
             op_generator_t_arg_t(gen=value_generator_t(val=real_value(3.0_real_k))) &
             ]))])
@@ -39,7 +39,9 @@ contains
 
         print *, result % to_str()
         print *, result % trace
-        print *, gen % trace()
+        associate (gen_trace => gen % trace())
+          print *, gen_trace
+        end associate
 
         if (result % get_trace() /= gen % trace()) error stop "traces not equal"
 
@@ -64,7 +66,9 @@ contains
 
         print *, result % to_str()
         print *, result % trace
-        print *, gen % trace()
+        associate (gen_trace => gen % trace())
+          print *, gen_trace
+        end associate
 
         if (result % get_trace() /= gen % trace()) error stop "traces not equal"
         
@@ -82,7 +86,9 @@ contains
 
         print *, result % to_str()
         print *, result % get_trace()
-        print *, gen % trace()
+        associate (gen_trace => gen % trace())
+          print *, gen_trace
+        end associate
 
         if (result % get_trace() /= gen % trace()) error stop "traces not equal"
         
@@ -113,7 +119,9 @@ contains
 
         print *, result % to_str()
         print *, result % trace
-        print *, gen % trace()
+        associate (gen_trace => gen % trace())
+          print *, gen_trace
+        end associate
 
         if (result % get_trace() /= gen % trace()) error stop "traces not equal"
         

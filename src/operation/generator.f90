@@ -135,6 +135,7 @@ module op_generator_m
 
     type, extends(generator_t) :: op_generator_t
         type(op_generator_t_arg_t), allocatable :: args(:)
+        integer :: num_args
         class(operation_t), allocatable :: op
     contains
         procedure :: yield
@@ -156,10 +157,9 @@ contains
         if (.not. allocated(gen % args)) &
             error stop "uninitialized op generator args"
 
-        num_args = size(gen % args)
-        allocate (evaluated_args(num_args))
+        allocate (evaluated_args(gen % num_args))
 
-        do i = 1, num_args
+        do i = 1, gen % num_args
             call gen % args(i) % gen % yield(evaluated_args(i) % value)
         end do
 
@@ -181,13 +181,8 @@ contains
             error stop "uninitialized op generator args"
 
         num_args = size(gen % args)
-        allocate (input_traces(num_args))
 
-        do i = 1, num_args
-            input_traces(i) = gen % args(i) % gen % trace()
-        end do
-
-        trace = gen % op % trace(input_traces)
+        trace = gen % op % trace([ (gen % args(i) % gen % trace(), i = 1, num_args) ])
 
     end function
 
@@ -252,7 +247,7 @@ contains
             call move_alloc(op_gen, gen)
 
           case default
-            error stop
+            error stop "incorrect val_expr%argtype"
         end select
 
     end subroutine
@@ -268,7 +263,8 @@ contains
         type(op_generator_t_arg_t), allocatable :: args(:)
         integer :: i, nr_args
 
-        nr_args = size(val_expr % op_args)
+        nr_args = val_expr % num_args
+        gen % num_args = val_expr % num_args
 
         allocate (args(nr_args))
         do i = 1, nr_args

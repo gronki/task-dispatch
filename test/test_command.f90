@@ -56,7 +56,7 @@ contains
         ns = get_empty_ns()
 
         call evaluate_expression( &
-        &   ast_expression_t(add_t(), [ &
+        &   ast_expression_t(op=add_t(), num_args=2, args=[ &
         &      ast_expression_t(real_value(1.0_f64)), &
         &      ast_expression_t(real_value(3.0_f64))  &
         &   ]), result_value, ns)
@@ -78,7 +78,7 @@ contains
         ns = get_test_ns()
 
         call evaluate_expression( &
-        &   ast_expression_t(add_t(), [ &
+        &   ast_expression_t(op=add_t(), num_args=2, args=[ &
         &      ast_expression_t(real_value(1.0_f64)), &
         &      ast_expression_t(refname="two")  &
         &   ]), result_value, ns)
