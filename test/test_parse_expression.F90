@@ -49,14 +49,14 @@ program test_parser
         type(ast_expression_t) :: expr
         type(err_t) :: err
 
-        expr = parse("f(1)%g(2)", err)
+        expr = parse("fi(1)%gy(2)", err)
 
         call assertm(expr%argtype == ARG_CALL)
-        call assertm(expr%op_name == 'g')
+        call assertm(expr%op_name == 'gy')
         call assertm(expr%num_args == 2)
         associate (first_arg => expr%op_args(1))
             call assertm(first_arg%argtype == ARG_CALL)
-            call assertm(first_arg%op_name == 'f')
+            call assertm(first_arg%op_name == 'fi')
             call assertm(first_arg%num_args == 1)
             associate (first_first_arg => first_arg%op_args(1))
                 call assertm(first_first_arg%argtype == ARG_CONSTANT)

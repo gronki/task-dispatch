@@ -27,6 +27,7 @@ program test_fmt_token_loc
     l(1:1) = 'z'
     iomsg = ""
     read(l,*,iostat=iostat,iomsg=iomsg) b
+    print *, 'NOTE: BELOW ERROR IS EXPECTED BEHAVIOR'
     print *, iomsg
     call assertm(iostat /= 0)
 
@@ -43,7 +44,10 @@ program test_fmt_token_loc
     call assertm(a%offset == b%offset)
 
     l = "test nie test"
-    read(l, '(dt, 2x, a)', iostat=iostat) b, s
+    iomsg=""
+    read(l, '(dt, 2x, a)', iostat=iostat, iomsg=iomsg) b, s
+    print *, 'NOTE: BELOW ERROR IS EXPECTED BEHAVIOR'
+    print *, iomsg
     call assertm(iostat /= 0)
 
 end program

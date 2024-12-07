@@ -20,7 +20,7 @@ module generator_m
             class(value_t), allocatable, intent(out) :: val
             type(err_t), intent(inout), optional :: err
         end subroutine yield
-        function trace(gen)
+        recursive function trace(gen)
             import :: generator_t, value_trace_t
             class(generator_t), intent(in) :: gen
             type(value_trace_t) :: trace
@@ -63,7 +63,7 @@ contains
         write (*, *) 'G: fetched: ', val % to_str()
     end subroutine yield
 
-    function trace(gen)
+    recursive function trace(gen)
         class(value_generator_t), intent(in) :: gen
         type(value_trace_t) :: trace
 
@@ -107,7 +107,7 @@ contains
         write (*, *) 'G: fetched (by reference): ', val % to_str()
     end subroutine yield
 
-    function trace(gen)
+    recursive function trace(gen)
         class(reference_generator_t), intent(in) :: gen
         type(value_trace_t) :: trace
 
@@ -170,7 +170,7 @@ contains
 
     end subroutine
 
-    function trace(gen)
+    recursive function trace(gen)
         class(op_generator_t), intent(in) :: gen
         type(value_trace_t) :: trace
 
@@ -247,6 +247,7 @@ contains
             call move_alloc(op_gen, gen)
 
           case default
+            print *, val_expr%argtype
             error stop "incorrect val_expr%argtype"
         end select
 

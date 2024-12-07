@@ -42,20 +42,20 @@ contains
     recursive subroutine parse_expression(tokens, expr, err)
         type(tok_array_t), intent(inout) :: tokens
         type(ast_expression_t), intent(inout) :: expr
-        type(ast_expression_t), allocatable :: child_expr
+        type(ast_expression_t) :: child_expr
         type(token_t) :: token
         type(err_t), intent(out), optional :: err
         integer :: pivot
 
         call parse_recursive(tokens, expr, err)
+        if ( check(err) ) return
 
         iter_chain: do
             call get_current_token(tokens, token)
             if (token /= token_t(type=token_delim, value=chain_call_delim)) exit iter_chain
 
             call get_next_token(tokens, token)
-            child_expr = expr
-            child_expr%loc = expr%loc ! why is this needed?
+            call ast_expression_copy(from = expr, to = child_expr)
 
             if (child_expr%argtype /= ARG_REF .and. child_expr%argtype /= ARG_CALL) then
                 call seterr(err, "chaining only allowed on idents and function call results", child_expr%loc)
@@ -63,42 +63,61 @@ contains
             end if
 
             call parse_recursive(tokens, expr, err)
-
-            if (expr%argtype /= ARG_CALL) then
+            if ( check(err) ) return
+            if ( expr % argtype /= ARG_CALL ) then
                 call seterr(err, "function call expected in chaining", expr%loc)
                 return
             end if
-
+            
             block
-                type(ast_expression_t), allocatable :: following_expr
-                integer :: num_current_args, iarg
+                type(ast_expression_t) :: following_expr
+                integer :: num_total_args, iarg
 
-                num_current_args = expr % num_args
-                following_expr = expr
+                call ast_expression_copy(from = expr, to = following_expr)
+
+                num_total_args = following_expr % num_args + 1
+                expr % num_args = num_total_args
 
                 ! this whole section could be nicely written using the array
-                ! concatenation syntax, but ifx crashes from that :(
-                if (allocated(expr % op_args)) deallocate(expr % op_args)
-                allocate(expr%op_args(num_current_args+1))
-                if (allocated(expr % op_arg_keys)) deallocate(expr % op_arg_keys)
-                allocate(expr%op_arg_keys(num_current_args+1))
+                ! concatenation syntax, but gfortran has some issues with deep copy.
 
-                expr%op_args(1) = child_expr
+                !expr % op_args = [ child_expr, [(following_expr % op_args(iarg - 1), iarg = 2, num_total_args)] ]
+                !expr % op_arg_keys = [ input_key_t(has_key=.false.), following_expr % op_arg_keys ]
+
+                if (allocated(expr % op_args)) deallocate(expr % op_args)
+                allocate(expr%op_args(num_total_args))
+                if (allocated(expr % op_arg_keys)) deallocate(expr % op_arg_keys)
+                allocate(expr%op_arg_keys(num_total_args))
+
+                call ast_expression_copy( to = expr % op_args(1), from = child_expr )
                 expr%op_arg_keys(1) = input_key_t(has_key=.false.)
                 
-                do iarg = 2, num_current_args + 1
-                    expr % op_args(iarg) = following_expr % op_args(iarg-1)
-                    expr % op_arg_keys(iarg) = following_expr % op_arg_keys(iarg-1)
+                do iarg = 2, num_total_args
+                    call ast_expression_copy( to = expr % op_args(iarg), from = following_expr % op_args(iarg-1) )
+                    expr % op_arg_keys(iarg) = following_expr % op_arg_keys(iarg-1) 
                 end do
-
-                deallocate( following_expr )
-
-                expr % num_args = num_current_args + 1
 
             end block
 
         end do iter_chain
 
+
+    end subroutine
+
+    recursive subroutine dealloc_recursive(expr)
+        type(ast_expression_t) :: expr
+        integer :: i
+
+        if (.not. allocated(expr % op_args)) return
+
+        do i = 1, size(expr % op_args)
+            call dealloc_recursive(expr % op_args(i))
+        end do
+
+        print *, allocated(expr%op_args)
+
+        deallocate( expr % op_args )
+        deallocate( expr % op_arg_keys )
     end subroutine
 
     recursive subroutine parse_recursive(tokens, expr, err)
@@ -180,27 +199,36 @@ contains
             end do iter_args
 
             if (num_args > 0) then
-                expr = ast_expression_t(opname, num_args, args=op_args(:num_args), keys=op_arg_keys(:num_args), loc=ident_token%loc)
+                call ast_expression_copy(expr, from = ast_expression_t(opname, num_args, &
+                    args=op_args(:num_args), keys=op_arg_keys(:num_args), loc=ident_token%loc))
             else
-                expr = ast_expression_t(opname, num_args, loc=ident_token%loc)
+                call ast_expression_copy(expr, from = ast_expression_t(opname, num_args, loc=ident_token%loc))
             end if
-            expr % loc = ident_token % loc ! why is this needed?
             return
 
         end block parse_function_call
 
     end subroutine
 
-    function parsed_expression(line, err)
+    subroutine parse_expression_str(line, expr, err)
         character(len=*), intent(in) :: line
         type(tok_array_t) :: tokens
         type(err_t), intent(out), optional :: err
-        type(ast_expression_t) :: parsed_expression
+        type(ast_expression_t), intent(inout) :: expr
 
         call tokenize_into_array(line, tokens, err)
         if (check(err)) return
 
-        call parse_expression(tokens, parsed_expression, err)
+        call parse_expression(tokens, expr, err)
+
+    end subroutine
+
+    function parsed_expression(line, err) result(expr)
+        character(len=*), intent(in) :: line
+        type(err_t), intent(out), optional :: err
+        type(ast_expression_t) :: expr
+
+        call parse_expression_str(line, expr, err)
 
     end function
 

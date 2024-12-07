@@ -36,6 +36,8 @@ module ast_m
 
     public :: ast_expression_t
 
+    public :: ast_expression_copy
+
     type :: ast_statement_t
         type(ast_expression_t) :: rhs
         logical :: is_assignment = .false.
@@ -73,6 +75,7 @@ contains
         type(input_key_t), intent(in), optional :: keys(:)
         type(token_loc_t), intent(in), optional :: loc
         type(ast_expression_t) :: val_expr
+        integer :: i
 
         val_expr % argtype = ARG_CALL
         allocate(val_expr % op, source=op)
@@ -82,7 +85,10 @@ contains
         if (num_args == 0) return
         if (.not. present(args)) error stop "args required when num_args>0"
         
-        allocate(val_expr % op_args, source=args)
+        allocate(val_expr % op_args(size(args)))
+        do i = 1, size(args)
+            call ast_expression_copy(val_expr % op_args(i), from = args(i))
+        end do
         
         if (present(keys)) then
             allocate(val_expr % op_arg_keys, source=keys)
@@ -99,6 +105,7 @@ contains
         type(input_key_t), intent(in), optional :: keys(:)
         type(token_loc_t), intent(in), optional :: loc
         type(ast_expression_t) :: val_expr
+        integer :: i
 
         val_expr % argtype = ARG_CALL
         val_expr % op_name = op_name
@@ -108,7 +115,10 @@ contains
         if (num_args == 0) return
         if (.not. present(args)) error stop "args required when num_args>0"
         
-        allocate(val_expr % op_args, source=args)
+        allocate(val_expr % op_args(size(args)))
+        do i = 1, size(args)
+            call ast_expression_copy(val_expr % op_args(i), from = args(i))
+        end do
         
         if (present(keys)) then
             allocate(val_expr % op_arg_keys, source=keys)
@@ -118,5 +128,42 @@ contains
         end if
         if (present(loc)) val_expr % loc = loc
     end function
+
+    !> This procedure performs a (deep) copy of AST nodes.
+    !> This is only needed to work around gfortran bug
+    !> preventing correct copies and causing double free error.
+    recursive pure subroutine ast_expression_copy(to, from)
+        !> Node to copy to.
+        type(ast_expression_t), intent(inout) :: to
+        !> Node to copy from.
+        type(ast_expression_t), intent(in) :: from
+
+        integer :: i
+
+        to % argtype = from % argtype
+        to % loc = from % loc
+
+        if ( allocated(from % constant) ) &
+            to % constant = from % constant
+        to % refname = from % refname
+        
+        to % num_args = from % num_args
+        to % op_name = from % op_name
+        if ( allocated(from % op) ) allocate( to % op, source = from % op )
+        if ( from % num_args == 0 ) return
+
+        if ( allocated(from % op_arg_keys) ) &
+            to % op_arg_keys = from % op_arg_keys 
+
+        if ( allocated(to % op_args) ) deallocate( to % op_args )
+
+        if (.not. allocated(from % op_args)) return
+        allocate ( to % op_args(size(from % op_args)) ) 
+
+        do i = 1, size(from % op_args)
+            call ast_expression_copy( from = from % op_args(i), to = to % op_args(i) )
+        end do
+        
+    end subroutine
 
 end module
