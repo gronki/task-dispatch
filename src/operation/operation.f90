@@ -1,204 +1,204 @@
 module operation_m
 
-    use value_m
-    use sequence_value_m
-    use iso_fortran_env, only: debug_output => error_unit
-    implicit none (type, external)
-    private
+use value_m
+use sequence_value_m
+use iso_fortran_env, only: debug_output => error_unit
+implicit none (type, external)
+private
 
-    type input_key_t
-        logical :: has_key = .false.
-        character(len=32) :: key = ""
-    end type input_key_t
+type input_key_t
+   logical :: has_key = .false.
+   character(len=32) :: key = ""
+end type input_key_t
 
-    public :: input_key_t
+public :: input_key_t
 
-    type, abstract :: operation_t
-    contains
-        procedure(exec_proto), deferred :: exec
-        procedure :: trace => trace_generic
-        procedure :: exec_trace
-        procedure, nopass :: args_match
-        procedure, nopass :: is_elemental
-        procedure(opname_proto), nopass, deferred :: name
-    end type operation_t
+type, abstract :: operation_t
+contains
+   procedure(exec_proto), deferred :: exec
+   procedure :: trace => trace_generic
+   procedure :: exec_trace
+   procedure, nopass :: args_match
+   procedure, nopass :: is_elemental
+   procedure(opname_proto), nopass, deferred :: name
+end type operation_t
 
-    public :: operation_t
+public :: operation_t
 
-    abstract interface
-        subroutine exec_proto(op, inputs, output)
-            import :: value_ref_t, operation_t, value_t
-            class(operation_t), intent(in) :: op
-            type(value_ref_t), intent(in) :: inputs(:)
-            class(value_t), intent(out), allocatable :: output
-        end subroutine exec_proto
+abstract interface
+subroutine exec_proto(op, inputs, output)
+   import :: value_ref_t, operation_t, value_t
+   class(operation_t), intent(in) :: op
+   type(value_ref_t), intent(in) :: inputs(:)
+   class(value_t), intent(out), allocatable :: output
+end subroutine exec_proto
 
-        pure function opname_proto() result(name)
-            character(len=32) :: name
-        end function opname_proto
-    end interface
+pure function opname_proto() result(name)
+   character(len=32) :: name
+end function opname_proto
+end interface
 
-    public :: argument_sequence_lengths, sequence_lengths_are_correct, make_sequential_input_vector
+public :: argument_sequence_lengths, sequence_lengths_are_correct, make_sequential_input_vector
 
 contains
 
-    pure function argument_sequence_lengths(inputs) result(sequence_lengths)
-        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-        integer :: sequence_lengths(size(inputs))
+pure function argument_sequence_lengths(inputs) result(sequence_lengths)
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   integer :: sequence_lengths(size(inputs))
 
-        integer :: input_index, num_inputs
+   integer :: input_index, num_inputs
 
-        num_inputs = size(inputs)
+   num_inputs = size(inputs)
 
-        do input_index = 1, num_inputs
-            select type(input_val => inputs(input_index)%value)
+   do input_index = 1, num_inputs
+      select type(input_val => inputs(input_index)%value)
 
-              class is (sequence_value_t)
-                ! in this case, input is a sequence
-                if (.not. allocated(input_val%items)) then
-                    error stop "sequence with unallocated values"
-                end if
-                sequence_lengths(input_index) = size(input_val%items)
+      class is (sequence_value_t)
+         ! in this case, input is a sequence
+         if (.not. allocated(input_val%items)) then
+            error stop "sequence with unallocated values"
+         end if
+         sequence_lengths(input_index) = size(input_val%items)
 
-              class default
-                sequence_lengths(input_index) = 0
+      class default
+         sequence_lengths(input_index) = 0
 
-            end select
-        end do
+      end select
+   end do
 
-    end function argument_sequence_lengths
+end function argument_sequence_lengths
 
-    pure function sequence_lengths_are_correct(sequence_lengths)
-        integer, intent(in) :: sequence_lengths(:)
-        logical :: sequence_lengths_are_correct
+pure function sequence_lengths_are_correct(sequence_lengths)
+   integer, intent(in) :: sequence_lengths(:)
+   logical :: sequence_lengths_are_correct
 
-        integer, allocatable :: sequence_lengths_nonzero(:)
-        logical :: is_sequence(size(sequence_lengths))
-        integer :: sequence_length
+   integer, allocatable :: sequence_lengths_nonzero(:)
+   logical :: is_sequence(size(sequence_lengths))
+   integer :: sequence_length
 
-        sequence_lengths_are_correct = .true.
-        is_sequence = sequence_lengths > 0
-        if (.not. any(is_sequence)) return
-        sequence_lengths_nonzero = pack(sequence_lengths, is_sequence)
-        sequence_length = sequence_lengths_nonzero(1)
-        sequence_lengths_are_correct = all(sequence_lengths_nonzero == sequence_length)
-    end function sequence_lengths_are_correct
+   sequence_lengths_are_correct = .true.
+   is_sequence = sequence_lengths > 0
+   if (.not. any(is_sequence)) return
+   sequence_lengths_nonzero = pack(sequence_lengths, is_sequence)
+   sequence_length = sequence_lengths_nonzero(1)
+   sequence_lengths_are_correct = all(sequence_lengths_nonzero == sequence_length)
+end function sequence_lengths_are_correct
 
-    subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
-        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-        type(value_ref_t), intent(inout) :: temp_inputs(:) !! operation inputs
-        integer, intent(in) :: sequence_index
-        logical :: is_sequence(size(inputs))
-        integer :: input_index, num_inputs
+subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(value_ref_t), intent(inout) :: temp_inputs(:) !! operation inputs
+   integer, intent(in) :: sequence_index
+   logical :: is_sequence(size(inputs))
+   integer :: input_index, num_inputs
 
-        num_inputs = size(inputs)
+   num_inputs = size(inputs)
 
-        do input_index = 1, num_inputs
-            select type(input_val => inputs(input_index)%value)
-              class is (sequence_value_t)
-                temp_inputs(input_index) % value => input_val%items(sequence_index)%value
-              class default
-                temp_inputs(input_index) % value => input_val
-            end select
-        end do
-    end subroutine make_sequential_input_vector
+   do input_index = 1, num_inputs
+      select type(input_val => inputs(input_index)%value)
+      class is (sequence_value_t)
+         temp_inputs(input_index) % value => input_val%items(sequence_index)%value
+      class default
+         temp_inputs(input_index) % value => input_val
+      end select
+   end do
+end subroutine make_sequential_input_vector
 
-    recursive subroutine exec_trace(op, inputs, output)
-        !! Execute the operation and handle value tracing
-        !! as well as sequence processing.
-        !! If your operation explicitly expects sequences
-        !! as inputs (for example, to sum all arguments)
-        !! you need to override this subroutine.
+recursive subroutine exec_trace(op, inputs, output)
+   !! Execute the operation and handle value tracing
+   !! as well as sequence processing.
+   !! If your operation explicitly expects sequences
+   !! as inputs (for example, to sum all arguments)
+   !! you need to override this subroutine.
 
-        class(operation_t), intent(in) :: op !! operation
-        type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-        class(value_t), allocatable, intent(out) :: output !! output to be allocated
+   class(operation_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   class(value_t), allocatable, intent(out) :: output !! output to be allocated
 
-        type(value_ref_t) :: temp_inputs(size(inputs))
-        integer :: sequence_lengths(size(inputs))
-        integer :: input_index, sequence_index, sequence_length, num_inputs
-        integer :: i
+   type(value_ref_t) :: temp_inputs(size(inputs))
+   integer :: sequence_lengths(size(inputs))
+   integer :: input_index, sequence_index, sequence_length, num_inputs
+   integer :: i
 
-        num_inputs = size(inputs)
-        sequence_lengths = argument_sequence_lengths(inputs)
-        sequence_length = maxval(sequence_lengths)
+   num_inputs = size(inputs)
+   sequence_lengths = argument_sequence_lengths(inputs)
+   sequence_length = maxval(sequence_lengths)
 
-        ! here we handle a typical case, where none of the inputs is a sequence
-        if (sequence_length == 0 .or. .not. op % is_elemental()) then
-            call op % exec(inputs, output)
-            output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
-            return
-        end if
+   ! here we handle a typical case, where none of the inputs is a sequence
+   if (sequence_length == 0 .or. .not. op % is_elemental()) then
+      call op % exec(inputs, output)
+      output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
+      return
+   end if
 
-        ! by this point we have at least one sequence
+   ! by this point we have at least one sequence
 
-        if (.not. sequence_lengths_are_correct(sequence_lengths)) &
-            error stop "sequence parameters must all be equal length or scalars"
+   if (.not. sequence_lengths_are_correct(sequence_lengths)) &
+      error stop "sequence parameters must all be equal length or scalars"
 
-        ! unfortunately, at the moment sequence processing requires making a copy
-        ! but this might be implemented more efficiently in the future using pointers
+   ! unfortunately, at the moment sequence processing requires making a copy
+   ! but this might be implemented more efficiently in the future using pointers
 
-        ! now cycle through sequence index and only allocate copies for
-        ! sequence items
+   ! now cycle through sequence index and only allocate copies for
+   ! sequence items
 
-        allocate(sequence_value_t :: output)
-        select type (sequence_output => output)
-          type is (sequence_value_t)
+   allocate(sequence_value_t :: output)
+   select type (sequence_output => output)
+   type is (sequence_value_t)
 
-            allocate(sequence_output%items(sequence_length))
-            sequence_output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
+      allocate(sequence_output%items(sequence_length))
+      sequence_output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
 
-            do sequence_index = 1, sequence_length
-                call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
-                associate (output_item => sequence_output%items(sequence_index))
-                    call exec_trace(op, temp_inputs, output_item%value)
-                    write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-                        output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
-                end associate
-            end do
-        end select
+      do sequence_index = 1, sequence_length
+         call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+         associate (output_item => sequence_output%items(sequence_index))
+            call exec_trace(op, temp_inputs, output_item%value)
+            write (debug_output, *) ' sequence item ', sequence_index, ' ', &
+               output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
+         end associate
+      end do
+   end select
 
-    end subroutine exec_trace
+end subroutine exec_trace
 
 
-    function trace_generic(op, input_traces) result(output_trace)
-        !! Produces a generic trace for any operation following
-        !! the pattern: opname(trace_arg1, trace_arg2, ...)
-        !> operation
-        class(operation_t), intent(in) :: op
-        !> operation inputs
-        type(value_trace_t), intent(in) :: input_traces(:)
-        !> string trace
-        type(value_trace_t) :: output_trace
-        character(len=4096) :: buf
-        integer :: i, num_inputs
+function trace_generic(op, input_traces) result(output_trace)
+   !! Produces a generic trace for any operation following
+   !! the pattern: opname(trace_arg1, trace_arg2, ...)
+   !> operation
+   class(operation_t), intent(in) :: op
+   !> operation inputs
+   type(value_trace_t), intent(in) :: input_traces(:)
+   !> string trace
+   type(value_trace_t) :: output_trace
+   character(len=4096) :: buf
+   integer :: i, num_inputs
 
-        num_inputs = size(input_traces)
+   num_inputs = size(input_traces)
 
-        ! TODO: with Fortran 2023 standard, the variable can be automatically allocated
-        write (buf, '(a, *(a))') "@" // trim(op % name()) // "{", &
-            ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", "} ", i < num_inputs))), &
-            i = 1, num_inputs )
+   ! TODO: with Fortran 2023 standard, the variable can be automatically allocated
+   write (buf, '(a, *(a))') "@" // trim(op % name()) // "{", &
+      ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", "} ", i < num_inputs))), &
+      i = 1, num_inputs )
 
-        output_trace % str = trim(buf)
+   output_trace % str = trim(buf)
 
-    end function trace_generic
+end function trace_generic
 
-    pure function args_match(inputs, labels)
-        !! return true if the operation is able to handle
-        !! the arguments given by the call
-        type(value_ref_t), intent(in) :: inputs(:)
-        type(input_key_t), intent(in) :: labels(:)
-        logical :: args_match
+pure function args_match(inputs, labels)
+   !! return true if the operation is able to handle
+   !! the arguments given by the call
+   type(value_ref_t), intent(in) :: inputs(:)
+   type(input_key_t), intent(in) :: labels(:)
+   logical :: args_match
 
-        args_match = .true.
-    end function args_match
+   args_match = .true.
+end function args_match
 
-    pure function is_elemental()
-        !! return true if the operation should be performed
-        !! element-wise on the sequences
-        logical :: is_elemental
+pure function is_elemental()
+   !! return true if the operation should be performed
+   !! element-wise on the sequences
+   logical :: is_elemental
 
-        is_elemental = .true.
-    end function is_elemental
+   is_elemental = .true.
+end function is_elemental
 end module operation_m

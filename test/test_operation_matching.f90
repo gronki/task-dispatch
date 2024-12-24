@@ -346,10 +346,10 @@
 
 program test_operation_matching
 
-    ! use test_operation_matching_1, only: test1_run => run
-    ! implicit none (type, external)
+   ! use test_operation_matching_1, only: test1_run => run
+   ! implicit none (type, external)
 
-    ! print *, '*** TEST_OPERATION_MATCHING ***'
+   ! print *, '*** TEST_OPERATION_MATCHING ***'
 
-    ! call test1_run
+   ! call test1_run
 end program
