@@ -18,7 +18,6 @@ contains
    procedure(exec_proto), deferred :: exec
    procedure :: trace => trace_generic
    procedure :: exec_trace
-   procedure, nopass :: args_match
    procedure, nopass :: is_elemental
    procedure(opname_proto), nopass, deferred :: name
 end type operation_t
@@ -183,16 +182,6 @@ function trace_generic(op, input_traces) result(output_trace)
    output_trace % str = trim(buf)
 
 end function trace_generic
-
-pure function args_match(inputs, labels)
-   !! return true if the operation is able to handle
-   !! the arguments given by the call
-   type(value_ref_t), intent(in) :: inputs(:)
-   type(input_key_t), intent(in) :: labels(:)
-   logical :: args_match
-
-   args_match = .true.
-end function args_match
 
 pure function is_elemental()
    !! return true if the operation should be performed
