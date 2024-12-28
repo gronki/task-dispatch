@@ -130,14 +130,12 @@ recursive subroutine parse_recursive(tokens, expr, err)
 
    if (token%type == token_num_literal) then
       expr = ast_expression_t(value=real_value(token%value), loc=token%loc)
-      expr % loc = token % loc ! why is this needed?
       call get_next_token(tokens)
       return
    end if
 
    if (token%type == token_str_literal) then
       expr = ast_expression_t(value=str_value(token%value), loc=token%loc)
-      expr % loc = token % loc ! why is this needed?
       call get_next_token(tokens)
       return
    end if
@@ -152,7 +150,6 @@ recursive subroutine parse_recursive(tokens, expr, err)
    call get_next_token(tokens, token)
    if (token /= token_t(type=token_delim, value="(")) then
       expr = ast_expression_t(refname=ident_token%value, loc=ident_token%loc)
-      expr % loc = ident_token % loc ! why is this needed?
       return
    end if
 
