@@ -2,22 +2,25 @@ module operation_mksequence_m
 
 use value_m
 use sequence_value_m
-use operation_m, only: operation_t
+use operation_m
+use error_m
 implicit none (type, external)
 
 type, extends(operation_t) :: op_mkseq_t
 contains
    procedure, nopass :: name => mkseq_name
-   procedure :: exec => exec_mkseq
+   procedure :: exec_one => exec_mkseq
    procedure :: trace => trace_mkseq
 end type
 
 contains
 
-subroutine exec_mkseq(op, inputs, output)
-   class(op_mkseq_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
+subroutine exec_mkseq(op, inputs, keys, output, err)
+   class(op_mkseq_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
 
    allocate(sequence_value_t :: output)
    select type (output)

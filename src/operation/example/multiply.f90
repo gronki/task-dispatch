@@ -1,22 +1,25 @@
 module operation_multiply_m
 
 use value_m, only: value_item_t
-use operation_m, only: operation_t
+use operation_m
 use real_value_m
 implicit none (type, external)
 
 type, extends(operation_t) :: multiply_t
 contains
    procedure, nopass :: name => multiply_name
-   procedure :: exec => exec_multiply
+   procedure :: exec_one => exec_multiply
 end type
 
 contains
 
-subroutine exec_multiply(op, inputs, output)
-   class(multiply_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
+subroutine exec_multiply(op, inputs, keys, output, err)
+   class(multiply_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
+
    integer :: i
    type(real_value_t) :: result
 

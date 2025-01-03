@@ -89,7 +89,8 @@ recursive subroutine evaluate_operation_call(val_expr, result_value, namespace, 
 
    ! here should be checked if this call result is already cached
    ! if not, execute the operation and cache the result
-   call op % exec_trace(item_to_ref(arg_values), result_value)
+   call op % exec_trace(item_to_ref(arg_values), val_expr % op_arg_keys, result_value, err)
+   if (check(err)) return
    ! call namespace % set_cached(result % value)
 
 end subroutine

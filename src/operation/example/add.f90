@@ -1,27 +1,33 @@
 module operation_add_m
 
 use value_m, only: value_item_t
-use operation_m, only: operation_t
+use operation_m
 use real_value_m
+use error_m
 implicit none (type, external)
 
 type, extends(operation_t) :: add_t
 contains
    procedure, nopass :: name => add_name
-   procedure :: exec => exec_add
+   procedure :: exec_one => exec_add
 end type
 
 contains
 
-subroutine exec_add(op, inputs, output)
-   class(add_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
+subroutine exec_add(op, inputs, keys, output, err)
+   class(add_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
+
    integer :: i
    type(real_value_t) :: result
 
-   if (size(inputs) == 0) &
-      error stop "at least one argument required"
+   if (size(inputs) == 0) then
+      call seterr( err, "add: at least one argument required")
+      return
+   end if
 
    result % value = 0
 
@@ -30,7 +36,7 @@ subroutine exec_add(op, inputs, output)
       type is (real_value_t)
          result % value = result % value + val % value
       class default
-         error stop "add: unexpected input type"
+         call seterr( err, "add: unexpected input type" )
       end select
    end do
 

@@ -130,11 +130,11 @@ private
 
 type :: op_generator_t_arg_t
    class(generator_t), allocatable :: gen
-   type(input_key_t) :: key
 end type op_generator_t_arg_t
 
 type, extends(generator_t) :: op_generator_t
    type(op_generator_t_arg_t), allocatable :: args(:)
+   type(input_key_t), allocatable :: arg_keys(:)
    integer :: num_args
    class(operation_t), allocatable :: op
 contains
@@ -165,7 +165,7 @@ recursive subroutine yield(gen, val, err)
 
    write (*, *) 'G: evaluating ', gen % op % name(), '...'
    ! TODO: executing arrays item-wise should be moved to be performed here
-   call gen % op % exec_trace(item_to_ref(evaluated_args), val)
+   call gen % op % exec_trace(item_to_ref(evaluated_args), gen % arg_keys, val, err)
    write (*, *) 'G: evaluated  ', gen % op % name(), ' as ', val % to_str()
 
 end subroutine
@@ -266,10 +266,10 @@ recursive subroutine op_generator_from_ast(val_expr, gen, namespace, operation_d
 
    nr_args = val_expr % num_args
    gen % num_args = val_expr % num_args
+   gen % arg_keys = val_expr % op_arg_keys
 
    allocate (args(nr_args))
    do i = 1, nr_args
-      args(i) % key = val_expr % op_arg_keys(i)
       call build_generator(val_expr % op_args(i), args(i) % gen, namespace, operation_db, err)
       if (check(err)) return
    end do

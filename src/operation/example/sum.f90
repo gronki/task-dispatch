@@ -2,7 +2,7 @@ module operation_sum_m
 
 use value_m
 use sequence_value_m
-use operation_m, only: operation_t
+use operation_m
 use real_value_m
 implicit none (type, external)
 
@@ -10,15 +10,18 @@ type, extends(operation_t) :: sum_t
 contains
    procedure, nopass :: name => sum_name
    procedure, nopass :: is_elemental => sum_is_elemental
-   procedure :: exec => exec_sum
+   procedure :: exec_one => exec_sum
 end type sum_t
 
 contains
 
-subroutine exec_sum(op, inputs, output)
-   class(sum_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
+subroutine exec_sum(op, inputs, keys, output, err)
+   class(sum_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
+
    integer :: i
    type(real_value_t), allocatable :: result
 

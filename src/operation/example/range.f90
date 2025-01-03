@@ -2,22 +2,26 @@ module operation_range_m
 
 use value_m, only: value_item_t
 use sequence_value_m, only: sequence_value_t
-use operation_m, only: operation_t
+use operation_m
 use real_value_m
+use error_m
 implicit none (type, external)
 
 type, extends(operation_t) :: op_range_t
 contains
    procedure, nopass :: name => range_name
-   procedure :: exec => exec_range
+   procedure :: exec_one => exec_range
 end type
 
 contains
 
-subroutine exec_range(op, inputs, output)
-   class(op_range_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
+subroutine exec_range(op, inputs, keys, output, err)
+   class(op_range_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
+
    integer :: i
    type(sequence_value_t) :: result
    real(kind=real_k) :: lo, hi, n_steps_f
@@ -35,10 +39,14 @@ subroutine exec_range(op, inputs, output)
       call parse_real(inputs(3) % value, n_steps_f)
       n_steps = int(n_steps_f)
    case default
-      error stop "range arguments: (start, stop, n_steps)"
+      call seterr( err, "range arguments: (start, stop, n_steps)" )
+      return
    end select
 
-   if (n_steps < 1) error stop "n_steps must be positive"
+   if (n_steps < 1) then
+      call seterr( err, "n_steps must be positive" )
+      return
+   end if
 
    allocate(result%items(n_steps))
 

@@ -1,21 +1,18 @@
 module operation_m
 
 use value_m
+use input_args_m
+use error_m
 use sequence_value_m
 use iso_fortran_env, only: debug_output => error_unit
 implicit none (type, external)
 private
 
-type input_key_t
-   logical :: has_key = .false.
-   character(len=32) :: key = ""
-end type input_key_t
-
 public :: input_key_t
 
 type, abstract :: operation_t
 contains
-   procedure(exec_proto), deferred :: exec
+   procedure(exec_one_proto), deferred :: exec_one
    procedure :: trace => trace_generic
    procedure :: exec_trace
    procedure, nopass :: is_elemental
@@ -25,16 +22,18 @@ end type operation_t
 public :: operation_t
 
 abstract interface
-subroutine exec_proto(op, inputs, output)
-   import :: value_ref_t, operation_t, value_t
-   class(operation_t), intent(in) :: op
-   type(value_ref_t), intent(in) :: inputs(:)
-   class(value_t), intent(out), allocatable :: output
-end subroutine exec_proto
+subroutine exec_one_proto(op, inputs, keys, output, err)
+   import :: operation_t, value_ref_t, input_key_t, value_t, err_t
+   class(operation_t), intent(in) :: op !! operation
+   type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
+end subroutine
 
 pure function opname_proto() result(name)
    character(len=32) :: name
-end function opname_proto
+end function
 end interface
 
 public :: argument_sequence_lengths, sequence_lengths_are_correct, make_sequential_input_vector
@@ -102,7 +101,7 @@ subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
    end do
 end subroutine make_sequential_input_vector
 
-recursive subroutine exec_trace(op, inputs, output)
+recursive subroutine exec_trace(op, inputs, keys, output, err)
    !! Execute the operation and handle value tracing
    !! as well as sequence processing.
    !! If your operation explicitly expects sequences
@@ -111,7 +110,9 @@ recursive subroutine exec_trace(op, inputs, output)
 
    class(operation_t), intent(in) :: op !! operation
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-   class(value_t), allocatable, intent(out) :: output !! output to be allocated
+   type(input_key_t), intent(in) :: keys(:) !! input keywords
+   class(value_t), intent(out), allocatable :: output !! output/result
+   type(err_t), intent(inout) :: err !! error
 
    type(value_ref_t) :: temp_inputs(size(inputs))
    integer :: sequence_lengths(size(inputs))
@@ -124,7 +125,7 @@ recursive subroutine exec_trace(op, inputs, output)
 
    ! here we handle a typical case, where none of the inputs is a sequence
    if (sequence_length == 0 .or. .not. op % is_elemental()) then
-      call op % exec(inputs, output)
+      call op % exec_one(inputs, keys, output, err)
       output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
       return
    end if
@@ -134,11 +135,7 @@ recursive subroutine exec_trace(op, inputs, output)
    if (.not. sequence_lengths_are_correct(sequence_lengths)) &
       error stop "sequence parameters must all be equal length or scalars"
 
-   ! unfortunately, at the moment sequence processing requires making a copy
-   ! but this might be implemented more efficiently in the future using pointers
-
-   ! now cycle through sequence index and only allocate copies for
-   ! sequence items
+   ! iteratre through arguments, and for sequence items recursively substitute
 
    allocate(sequence_value_t :: output)
    select type (sequence_output => output)
@@ -150,9 +147,10 @@ recursive subroutine exec_trace(op, inputs, output)
       do sequence_index = 1, sequence_length
          call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
          associate (output_item => sequence_output%items(sequence_index))
-            call exec_trace(op, temp_inputs, output_item%value)
+            call exec_trace(op, temp_inputs, keys, output_item%value, err)
             write (debug_output, *) ' sequence item ', sequence_index, ' ', &
                output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
+            if (check(err)) return
          end associate
       end do
    end select
@@ -190,4 +188,5 @@ pure function is_elemental()
 
    is_elemental = .true.
 end function is_elemental
+
 end module operation_m
