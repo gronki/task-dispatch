@@ -1,0 +1,3 @@
+[submodule "deps/yaftree"]
+	path = deps/yaftree
+	url = https://github.com/gronki/yaftree.git
