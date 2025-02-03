@@ -17,16 +17,16 @@ contains
    procedure :: exec_trace
    procedure, nopass :: is_elemental
    procedure(opname_proto), nopass, deferred :: name
+   procedure, nopass :: get_argspec
 end type operation_t
 
 public :: operation_t
 
 abstract interface
-subroutine exec_one_proto(op, inputs, keys, output, err)
+subroutine exec_one_proto(op, inputs, output, err)
    import :: operation_t, value_ref_t, input_key_t, value_t, err_t
    class(operation_t), intent(in) :: op !! operation
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-   type(input_key_t), intent(in) :: keys(:) !! input keywords
    class(value_t), intent(out), allocatable :: output !! output/result
    type(err_t), intent(inout) :: err !! error
 end subroutine
@@ -101,7 +101,7 @@ subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
    end do
 end subroutine make_sequential_input_vector
 
-recursive subroutine exec_trace(op, inputs, keys, output, err)
+recursive subroutine exec_trace(op, inputs, output, err)
    !! Execute the operation and handle value tracing
    !! as well as sequence processing.
    !! If your operation explicitly expects sequences
@@ -110,7 +110,6 @@ recursive subroutine exec_trace(op, inputs, keys, output, err)
 
    class(operation_t), intent(in) :: op !! operation
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-   type(input_key_t), intent(in) :: keys(:) !! input keywords
    class(value_t), intent(out), allocatable :: output !! output/result
    type(err_t), intent(inout) :: err !! error
 
@@ -125,7 +124,7 @@ recursive subroutine exec_trace(op, inputs, keys, output, err)
 
    ! here we handle a typical case, where none of the inputs is a sequence
    if (sequence_length == 0 .or. .not. op % is_elemental()) then
-      call op % exec_one(inputs, keys, output, err)
+      call op % exec_one(inputs, output, err)
       output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
       return
    end if
@@ -147,7 +146,7 @@ recursive subroutine exec_trace(op, inputs, keys, output, err)
       do sequence_index = 1, sequence_length
          call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
          associate (output_item => sequence_output%items(sequence_index))
-            call exec_trace(op, temp_inputs, keys, output_item%value, err)
+            call exec_trace(op, temp_inputs, output_item%value, err)
             write (debug_output, *) ' sequence item ', sequence_index, ' ', &
                output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
             if (check(err)) return
@@ -177,6 +176,8 @@ function trace_generic(op, input_traces) result(output_trace)
       ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", "} ", i < num_inputs))), &
       i = 1, num_inputs )
 
+   ! TODO: update to print prettier traces when argspec is present
+
    output_trace % str = trim(buf)
 
 end function trace_generic
@@ -188,5 +189,9 @@ pure function is_elemental()
 
    is_elemental = .true.
 end function is_elemental
+
+pure subroutine get_argspec(argspec)
+   type(arg_entry_t), intent(inout), allocatable :: argspec(:)
+end subroutine
 
 end module operation_m

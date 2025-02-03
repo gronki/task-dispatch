@@ -7,6 +7,7 @@ use namespace_m
 use error_m
 use line_error_m
 use operation_database_m
+use input_args_m
 use tokenizer_m, only: token_loc_t
 
 implicit none (type, external)
@@ -61,6 +62,7 @@ recursive subroutine evaluate_operation_call(val_expr, result_value, namespace, 
 
    class(operation_t), allocatable :: op
    type(value_item_t), allocatable, target :: arg_values(:)
+   type(value_ref_t), allocatable :: input_refs(:)
    integer :: i, nr_args
 
    nr_args = size(val_expr % op_args)
@@ -85,11 +87,32 @@ recursive subroutine evaluate_operation_call(val_expr, result_value, namespace, 
       end if
    end if
 
-   write (*,*) 'TRACE ', op % trace([(arg_values(i) % value % get_trace(), i = 1, nr_args)])
+   match_args: block
+      type(arg_entry_t), allocatable :: argspec(:)
+      type(argument_match_t), allocatable :: match(:)
+
+      call op % get_argspec(argspec)
+
+      if (.not. allocated(argspec)) then
+         input_refs = item_to_ref(arg_values)
+         exit match_args
+      end if
+
+      allocate(match(size(argspec)))
+      call match_arguments(argspec, val_expr % op_arg_keys, match, err)
+
+      if (check(err)) then
+         call seterr(err, "here", val_expr % loc)
+         return
+      end if
+
+      input_refs = connect_matched_args(item_to_ref(arg_values), match)
+
+   end block match_args
 
    ! here should be checked if this call result is already cached
    ! if not, execute the operation and cache the result
-   call op % exec_trace(item_to_ref(arg_values), val_expr % op_arg_keys, result_value, err)
+   call op % exec_trace(input_refs, result_value, err)
    if (check(err)) return
    ! call namespace % set_cached(result % value)
 

@@ -14,10 +14,9 @@ end type
 
 contains
 
-subroutine exec_add(op, inputs, keys, output, err)
+subroutine exec_add(op, inputs, output, err)
    class(add_t), intent(in) :: op !! operation
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
-   type(input_key_t), intent(in) :: keys(:) !! input keywords
    class(value_t), intent(out), allocatable :: output !! output/result
    type(err_t), intent(inout) :: err !! error
 

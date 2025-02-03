@@ -33,7 +33,7 @@ end type
 
 public :: argument_match_t
 
-public :: match_arguments, connect_matched_args
+public :: match_arguments, connect_matched_args, connect_matched_traces
 
 contains
 
@@ -227,5 +227,24 @@ function connect_matched_args(refs, match) result(matched_refs)
 
 end function
 
+
+pure function connect_matched_traces(input_traces, match) result(expanded_traces)
+   type(value_trace_t), intent(in) :: input_traces(:)
+   type(argument_match_t), intent(in) :: match(:)
+   type(value_trace_t) :: expanded_traces(size(match))
+
+   integer :: iarg
+
+   do iarg = 1, size(match)
+      if (allocated(match(iarg) % default)) then
+         ! default
+         expanded_traces(iarg) = match(iarg) % default % get_trace()
+      else
+         if (match(iarg) % matched_pos == -1) error stop
+         expanded_traces(iarg) = input_traces(match(iarg) % matched_pos)
+      end if
+   end do
+
+end function
 
 end module

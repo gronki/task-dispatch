@@ -125,6 +125,7 @@ use generator_m
 use operation_m, only: input_key_t, operation_t
 use value_m
 use error_m
+use input_args_m
 implicit none(type, external)
 private
 
@@ -135,6 +136,7 @@ end type op_generator_t_arg_t
 type, extends(generator_t) :: op_generator_t
    type(op_generator_t_arg_t), allocatable :: args(:)
    type(input_key_t), allocatable :: arg_keys(:)
+   type(argument_match_t), allocatable :: arg_match(:)
    integer :: num_args
    class(operation_t), allocatable :: op
 contains
@@ -152,6 +154,7 @@ recursive subroutine yield(gen, val, err)
    type(err_t), intent(inout), optional :: err
 
    type(value_item_t), allocatable, target :: evaluated_args(:)
+   type(value_ref_t), allocatable :: input_refs(:)
    integer :: i, num_args
 
    if (.not. allocated(gen % args)) &
@@ -163,9 +166,15 @@ recursive subroutine yield(gen, val, err)
       call gen % args(i) % gen % yield(evaluated_args(i) % value)
    end do
 
+   if (allocated(gen % arg_match)) then
+      input_refs = connect_matched_args(item_to_ref(evaluated_args), gen % arg_match)
+   else
+      input_refs = item_to_ref(evaluated_args)
+   end if
+
    write (*, *) 'G: evaluating ', gen % op % name(), '...'
    ! TODO: executing arrays item-wise should be moved to be performed here
-   call gen % op % exec_trace(item_to_ref(evaluated_args), gen % arg_keys, val, err)
+   call gen % op % exec_trace(input_refs, val, err)
    write (*, *) 'G: evaluated  ', gen % op % name(), ' as ', val % to_str()
 
 end subroutine
@@ -182,7 +191,13 @@ recursive function trace(gen)
 
    num_args = size(gen % args)
 
-   trace = gen % op % trace([ (gen % args(i) % gen % trace(), i = 1, num_args) ])
+   input_traces = [ (gen % args(i) % gen % trace(), i = 1, num_args) ]
+
+   if (allocated(gen % arg_match)) then
+      trace = gen % op % trace(connect_matched_traces(input_traces, gen % arg_match))
+   else
+      trace = gen % op % trace(input_traces)
+   end if
 
 end function
 
@@ -198,6 +213,7 @@ use value_generator_m
 use reference_generator_m
 use operation_m
 use value_m
+use input_args_m
 use namespace_m
 use error_m
 use line_error_m
@@ -292,6 +308,25 @@ recursive subroutine op_generator_from_ast(val_expr, gen, namespace, operation_d
          return
       end if
    end if
+
+   match_args: block
+      type(arg_entry_t), allocatable :: argspec(:)
+
+      call op % get_argspec(argspec)
+
+      if (.not. allocated(argspec)) then
+         exit match_args
+      end if
+
+      allocate(gen % arg_match(size(argspec)))
+      call match_arguments(argspec, val_expr % op_arg_keys, gen % arg_match, err)
+
+      if (check(err)) then
+         call seterr(err, "here", val_expr % loc)
+         return
+      end if
+
+   end block match_args
 
    call move_alloc(args, gen % args)
    call move_alloc(op, gen % op)
