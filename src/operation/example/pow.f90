@@ -3,12 +3,15 @@ module operation_power_m
 use value_m, only: value_item_t
 use operation_m
 use real_value_m
+use input_args_m
+
 implicit none (type, external)
 
 type, extends(operation_t) :: op_pow_t
 contains
    procedure, nopass :: name => powd_name
    procedure :: exec_one => exec_pow
+   procedure, nopass :: get_argspec
 end type
 
 contains
@@ -40,5 +43,15 @@ pure function powd_name() result(name)
 
    name = "pow"
 end function
+
+pure subroutine get_argspec(argspec)
+   type(arg_entry_t), intent(inout), allocatable :: argspec(:)
+
+   argspec = [ &
+      arg_entry_t(pos=1, name="x"), &
+      arg_entry_t(pos=2, name="exponent") &
+   &]
+end subroutine
+
 
 end module
