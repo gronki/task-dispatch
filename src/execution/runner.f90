@@ -75,6 +75,7 @@ subroutine execute_console_line(line, operation_db, namespace, err)
    type(ast_statement_t) :: stmt
    class(generator_t), allocatable, target :: gen
    class(value_t), allocatable :: result
+   
    call tokenize_into_array(trim(line), tokens)
    call parse_statement(tokens, stmt, err)
 

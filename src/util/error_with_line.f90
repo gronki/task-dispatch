@@ -32,7 +32,7 @@ public :: error_with_line
 contains
 
 pure subroutine seterr_loc(err, message, loc)
-   type(err_t), intent(out), optional :: err
+   type(err_t), intent(inout), optional :: err
    character(len=*), intent(in) :: message
    type(token_loc_t), intent(in) :: loc
 
