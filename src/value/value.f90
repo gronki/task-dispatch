@@ -21,6 +21,7 @@ type, abstract :: value_t
 contains
    procedure :: get_trace
    procedure :: to_str
+   procedure :: cleanup => value_cleanup
 end type
 
 public :: value_t
@@ -33,13 +34,14 @@ public :: value_item_t
 
 type :: value_ref_t
    class(value_t), pointer :: value => null()
-   logical :: owner = .false.
+   integer, pointer, private :: refcounter => null()
+   logical, private :: protect = .false.
 contains
    procedure :: to_str => value_ref_to_str
 end type
 
 public :: value_ref_t
-public :: item_to_ref, ref_to_item, move_dealloc_ref, move_ref, dealloc
+public :: item_to_ref, ref_to_item, keep, free, protect, num_references
 
 contains
 
@@ -70,6 +72,12 @@ elemental function get_trace(value) result(trace)
 
 end function
 
+recursive subroutine value_cleanup(val)
+   class(value_t), intent(inout) :: val
+
+   write (debug_output, *) "DEL ", val % to_str()
+end subroutine
+
 elemental function traces_are_equal(trace, other_trace)
    CLASS(value_trace_t), intent(in) :: trace, other_trace
    logical :: traces_are_equal
@@ -98,59 +106,115 @@ end function
 function value_ref_to_str(value_ref) result(str)
    class(value_ref_t), intent(in) :: value_ref
    character(len=:), allocatable :: str
+   character(len=12) :: suff
 
    if (.not. associated(value_ref%value)) then
-      str = "&<null>"
+      str = "null"
       return
    end if
 
-   str = merge("$", "&", value_ref % owner) // value_ref % value % to_str()
+   if (associated(value_ref%refcounter)) then
+      write(suff, '(a,i0,a)') "[", value_ref%refcounter, "]"
+   else
+      suff = '?'
+   end if
+
+   if (value_ref%protect) suff = "!"
+
+   str = trim(suff) // value_ref % value % to_str()
 
 end function
 
-subroutine dealloc(ref)
+impure elemental subroutine keep(ref)
    type(value_ref_t), intent(inout) :: ref
 
-   if (ref % owner .and. associated(ref % value)) then
-      write (debug_output, *) " *DEALLOC* ", ref % to_str()
-      deallocate(ref % value)
+   call keep_internal(ref)
+end subroutine
+
+
+impure elemental function protect(init_val) result(ref)
+   type(value_ref_t) :: ref
+   class(value_t), intent(in), target :: init_val
+
+   ref % value => init_val
+   ref % protect = .true.
+
+end function
+
+
+impure elemental subroutine keep_internal(ref)
+   type(value_ref_t), intent(inout) :: ref
+
+   if ( ref % protect ) return
+
+   if ( .not. associated(ref % value) ) then
+      error stop "attempting to keepease refcount of a null reference"
    end if
 
-   ref % owner = .false.
-   nullify(ref % value)
+   if ( .not. associated(ref % refcounter) ) then
+      allocate( ref % refcounter )
+      ref % refcounter = 0
+   end if
+
+   ref % refcounter = ref % refcounter + 1
+
 end subroutine
 
-pure subroutine move_ref(from, to)
-   type(value_ref_t), intent(inout) :: from
-   type(value_ref_t), intent(inout) :: to
+impure elemental subroutine free(ref)
+   type(value_ref_t), intent(inout) :: ref
 
-   to % value => from % value
-   to % owner = from % owner
-   from % owner = .false.
+   if ( ref % protect ) return
+
+   if ( associated(ref % refcounter) ) then
+
+      ref % refcounter = ref % refcounter - 1
+
+      if ( ref % refcounter >= 1 ) then
+         nullify ( ref % value )
+         nullify ( ref % refcounter )
+         ref % protect = .false.
+         return
+      end if
+
+      deallocate ( ref % refcounter )
+
+   end if
+
+   if ( .not. associated(ref % value) ) return
+
+   call ref % value % cleanup()
+   deallocate ( ref % value )
+
 end subroutine
 
-subroutine move_dealloc_ref(from, to)
-   type(value_ref_t), intent(inout) :: from
-   type(value_ref_t), intent(inout) :: to
+elemental function num_references(ref)
+   type(value_ref_t), intent(in) :: ref
+   integer :: num_references
 
-   if (.not. associated(to % value, from % value) .and. to % owner) &
-      call dealloc(to)
-
-   call move_ref(from, to)
-end subroutine
+   if (associated(ref % refcounter)) then
+      num_references = ref % refcounter
+   else
+      num_references = -1
+   end if
+end function
 
 impure elemental function item_to_ref(item) result(ref)
    type(value_item_t), intent(inout), target :: item
    type(value_ref_t) :: ref
 
-   ref % value => item % value
+   if (allocated(item % value)) then
+      ref % value => item % value
+      ref % protect = .true.
+   end if
 end function
 
 impure elemental subroutine ref_to_item(ref, item)
    type(value_ref_t), intent(in) :: ref
    type(value_item_t), intent(out) :: item
 
-   allocate(item % value, source=ref % value)
+   if (associated(ref % value)) then
+      allocate(item % value, source=ref % value)
+   end if
 end subroutine
 
 end module value_m

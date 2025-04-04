@@ -1,107 +1,112 @@
 program test_refs
 
-!     use value_m
-!     use real_value_m
+   use value_m
+   use real_value_m
+   use ref_sequence_value_m
 
-!     implicit none (type, external)
-
-!     TYPE :: struct_with_ref_t
-!         TYPE(value_ref_t) :: ref
-!     END TYPE
-
-!     print *, '*** TEST_REFS ***'
+   implicit none (type, external)
 
 
-!     print *, '*   test 1 '
-!     call test_refs_1
+   print *, '*** TEST_REFS ***'
 
-!     print *, '*   test 2 '
-!     call test_refs_2
 
-!     print *, '*   test 3 '
-!     call test_refs_3
+   print *, '*   test 1 '
+   call test_refs_1
 
-! contains
+   print *, '*   test 2 '
+   call test_refs_2
 
-!     subroutine test_refs_1
-!         type(value_ref_t) :: ref1, ref2, ref3
-!         type(real_value_t), pointer :: val
+   print *, '*   test 3 '
+   call test_refs_3
 
-!         allocate(val, source=real_value(1.0_f64))
+contains
 
-!         call ref1 % own(val)
-!         print *, ref1%to_str(), ref2%to_str(), ref3%to_str()
 
-!         if (.not. ref1 % owner) stop -1
-!         if (.not. associated(ref1 % value)) stop -2
+   subroutine test_refs_1
+      type(value_ref_t) :: ref1, ref2
+      type(real_value_t), pointer :: myval
 
-!         call ref2 % own(ref1)
-!         print *, ref1%to_str(), ref2%to_str(), ref3%to_str()
+      allocate (ref1 % value, source=real_value(1.0_f64)); call keep( ref1 )
 
-!         if (.not. (associated(ref1 % value, ref2 % value))) stop 1
-!         if (.not. (ref1 % owner .eqv. .false.)) stop 2
-!         if (.not. (ref2 % owner .eqv. .true.)) stop 2
+      print *, ref1 % to_str(), " ", ref2 % to_str()
+      if (num_references(ref1) /= 1) error stop 'num_references(ref1) /= 1'
 
-!         call ref3 % refer(ref2)
-!         print *, ref1%to_str(), ref2%to_str(), ref3%to_str()
+      ref2 = ref1; call keep( ref2 )
 
-!         if (.not. associated(ref3 % value, ref2 % value)) stop 1
-!         if (ref3 % owner) stop 2
+      print *, ref1 % to_str(), " ", ref2 % to_str()
+      if (num_references(ref1) /= 2) error stop 'num_references(ref1) /= 2'
 
-!         call ref1 % dealloc
-!         print *, ref1%to_str(), ref2%to_str(), ref3%to_str()
+      call free( ref1 )
 
-!         call ref2 % dealloc
-!         call ref3 % dealloc
-!         print *, ref1%to_str(), ref2%to_str(), ref3%to_str()
+      print *, ref1 % to_str(), " ", ref2 % to_str()
+      if (num_references(ref2) /= 1) error stop 'num_references(ref2) /= 1'
 
-!         if (associated(ref2 % value)) stop 3
-!     end subroutine
+      call free( ref2 )
 
-!     function fun_returns_owned_ref(r) result(ref)
-!         real :: r
-!         type(value_ref_t) :: ref
-!         type(real_value_t), pointer :: ptr
-!         allocate(ptr)
-!         ptr % value = r
-!         call ref % own(ptr)
-!     end function
+      print *, ref1 % to_str(), " ", ref2 % to_str()
+      if (num_references(ref2) > 0) error stop 'num_references(ref2) > 0'
 
-!     function fun_returns_ref() result(ref)
-!         type(value_ref_t) :: ref
-!         type(real_value_t), allocatable, save, target :: val
-!         if (.not. allocated(val)) then
-!             allocate(val)
-!             val%value = 1.0
-!         end if
-!         call ref % refer(val)
-!     end function
+   end subroutine
 
-!     subroutine test_refs_2
-!         type(value_ref_t) :: ref1, ref2
-!         ref1 = fun_returns_owned_ref(1.0)
-!         associate (r=>fun_returns_owned_ref(2.0))
-!             print *, ref1 % to_str(), r % to_str()
-!             call r % dealloc
-!         end associate
-!         call ref1 % dealloc
-!         ref2 = fun_returns_ref()
-!         associate (r=>fun_returns_ref())
-!             print *, ref2%to_str(), r % to_str()
-!             call r % dealloc
-!         end associate
-!         call ref2 % dealloc
-!     end subroutine
 
-!     subroutine test_refs_3
-!         TYPE(struct_with_ref_t) :: s1, s2
-!         s1 % ref = fun_returns_owned_ref(1.0)
-!         s2 = s1
-!         print *, s1 % ref % to_str(), s2 % ref % to_str()
-!         s2 % ref = fun_returns_owned_ref(2.0)
-!         print *, s1 % ref % to_str(), s2 % ref % to_str()
-!         call s1 % ref % dealloc
-!         call s2 % ref % dealloc
-!     end subroutine
+   subroutine test_refs_2
+      type(value_item_t) :: item
+      type(value_ref_t) :: ref, ref2
+      item % value =  real_value(1.0_f64)
+
+      ref = item_to_ref(item); call keep( ref )
+
+      print *, ref % to_str(), " ", ref2 % to_str()
+      if (num_references(ref) /= -1) error stop 'num_references(ref) / -1'
+
+      ref2 =  ref; call keep(ref2)
+
+      print *, ref % to_str(), " ", ref2 % to_str()
+      if (num_references(ref2) /= -1) error stop 'num_references(ref2) / -1'
+
+      call free( ref )
+      call free( ref2 )
+
+      print *, ref % to_str(), " ", ref2 % to_str()
+      if (num_references(ref) /= -1) error stop 'num_references(ref) / -1'
+
+   end subroutine
+
+
+   subroutine test_refs_3
+
+      type(ref_sequence_value_t), pointer :: seq
+      type(value_ref_t) :: ref, seq_ref
+
+      integer :: i
+
+      allocate(seq)
+      allocate(seq % items(3))
+      allocate(seq % items(1) % value, source=real_value(1.0_f64))
+      allocate(seq % items(2) % value, source=real_value(2.0_f64))
+      allocate(seq % items(3) % value, source=real_value(3.0_f64))
+      call keep( seq % items )
+
+      print *, ref % to_str(), " ", (seq % items(i) % to_str(), " ", i = 1, 3)
+      if (num_references(seq % items(1)) /= 1 ) error stop "num_references(seq % items(1)) /= 1"
+      if (num_references(seq % items(2)) /= 1 ) error stop "num_references(seq % items(2)) /= 1"
+      if (num_references(seq % items(3)) /= 1 ) error stop "num_references(seq % items(3)) /= 1"
+
+      seq_ref % value => seq; call keep( seq_ref )
+
+      print *, ref % to_str(), " ", (seq % items(i) % to_str(), " ", i = 1, 3)
+
+      ref = seq % items(2) ; call keep( ref )
+
+      print *, ref % to_str(), " ", (seq % items(i) % to_str(), " ", i = 1, 3)
+      if (num_references(ref) /= 2) error stop "num_references(ref) /= 2"
+
+      call free( seq_ref )
+
+      print *, ref % to_str()
+      if (num_references(ref) /= 1) error stop "num_references(ref) /= 1"
+      if ( associated(seq_ref % value )) error stop "associated(seq_ref % value )"
+
+   end subroutine
 
 end program

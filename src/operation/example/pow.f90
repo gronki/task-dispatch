@@ -6,6 +6,7 @@ use real_value_m
 use input_args_m
 
 implicit none (type, external)
+private
 
 type, extends(operation_t) :: op_pow_t
 contains
@@ -13,6 +14,13 @@ contains
    procedure :: exec_one => exec_pow
    procedure, nopass :: get_argspec
 end type
+
+public :: op_pow_t
+
+type(arg_entry_t), target :: pow_argspec(2) = [ &
+   arg_entry_t(pos=1, name="x"), &
+   arg_entry_t(pos=2, name="exponent") &
+&]
 
 contains
 
@@ -47,10 +55,7 @@ end function
 pure subroutine get_argspec(argspec)
    type(arg_entry_t), intent(inout), allocatable :: argspec(:)
 
-   argspec = [ &
-      arg_entry_t(pos=1, name="x"), &
-      arg_entry_t(pos=2, name="exponent") &
-   &]
+   argspec = pow_argspec
 end subroutine
 
 
