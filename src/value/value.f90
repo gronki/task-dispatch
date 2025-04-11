@@ -40,6 +40,11 @@ contains
    procedure :: to_str => value_ref_to_str
 end type
 
+interface keep
+module procedure keep_ref
+module procedure keep_val
+end interface
+
 public :: value_ref_t
 public :: item_to_ref, ref_to_item, keep, free, protect, num_references
 
@@ -125,11 +130,44 @@ function value_ref_to_str(value_ref) result(str)
 
 end function
 
-impure elemental subroutine keep(ref)
-   type(value_ref_t), intent(inout) :: ref
+impure elemental function keep_ref(ref) result(kept)
+   type(value_ref_t), intent(in) :: ref
+   type(value_ref_t) :: kept
 
-   call keep_internal(ref)
-end subroutine
+   if ( .not. associated(ref % value) ) then
+      error stop "attempting to increase refcount of a null reference"
+   end if
+
+   if ( ref % protect ) then
+      allocate( kept % value, source=ref % value )
+   else
+      kept % value => ref % value
+   end if
+
+   if (associated(ref % refcounter) ) then
+      kept % refcounter => ref % refcounter
+   else
+      allocate( kept % refcounter )
+      kept % refcounter = 0
+   end if
+
+   kept % refcounter = kept % refcounter + 1
+
+end function
+
+function keep_val(val) result(kept)
+   class(value_t), intent(in), pointer :: val
+   type(value_ref_t) :: kept
+
+   if ( .not. associated(val) ) then
+      error stop "attempting to increase refcount of a null reference"
+   end if
+
+   kept % value => val
+   allocate( kept % refcounter )
+   kept % refcounter = 1
+
+end function
 
 
 impure elemental function protect(init_val) result(ref)
@@ -141,24 +179,6 @@ impure elemental function protect(init_val) result(ref)
 
 end function
 
-
-impure elemental subroutine keep_internal(ref)
-   type(value_ref_t), intent(inout) :: ref
-
-   if ( ref % protect ) return
-
-   if ( .not. associated(ref % value) ) then
-      error stop "attempting to keepease refcount of a null reference"
-   end if
-
-   if ( .not. associated(ref % refcounter) ) then
-      allocate( ref % refcounter )
-      ref % refcounter = 0
-   end if
-
-   ref % refcounter = ref % refcounter + 1
-
-end subroutine
 
 impure elemental subroutine free(ref)
    type(value_ref_t), intent(inout) :: ref

@@ -218,10 +218,10 @@ function connect_matched_args(refs, match) result(matched_refs)
    do iarg = 1, size(match)
       if (allocated(match(iarg) % default)) then
          ! default
-         matched_refs(iarg) % value => match(iarg) % default
+         matched_refs(iarg) = protect(match(iarg) % default)
       else
          if (match(iarg) % matched_pos == -1) error stop
-         matched_refs(iarg) % value => refs(match(iarg) % matched_pos) % value
+         matched_refs(iarg) = refs(match(iarg) % matched_pos) 
       end if
    end do
 

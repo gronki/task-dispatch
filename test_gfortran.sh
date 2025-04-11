@@ -19,10 +19,12 @@ IMAGE_NAME="gfortran:${GCC_VERSION}-${UBUNTU_VERSION}"
 
 DOCKER=podman
 
-${DOCKER} build \
-    --build-arg "UBUNTU_TAG=${UBUNTU_VERSION}" \
-    --build-arg "GCC_VERSION=${GCC_VERSION}" \
-    -t "${IMAGE_NAME}" -f Dockerfile.test .
+if [ -z "$( ${DOCKER} images -q ${IMAGE_NAME} )" ];then
+    ${DOCKER} build \
+        --build-arg "UBUNTU_TAG=${UBUNTU_VERSION}" \
+        --build-arg "GCC_VERSION=${GCC_VERSION}" \
+        -t "${IMAGE_NAME}" -f Dockerfile.test .
+fi
 
 # ${DOCKER} run -it -v $(pwd):/source -v $(mktemp -d):/source/build \
 #     --entrypoint /usr/local/bin/fpm $IMAGE_NAME \
