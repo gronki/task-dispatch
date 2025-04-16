@@ -45,7 +45,8 @@ recursive subroutine yield(gen, val, err)
    allocate (evaluated_args(num_args), input_refs(num_args))
 
    do i = 1, num_args
-      call gen % args(i) % gen % yield_ref(input_refs(i))
+      call gen % args(i) % gen % yield_ref(input_refs(i), err)
+      if (check(err)) return
    end do
 
    if (allocated(gen % arg_match)) then
