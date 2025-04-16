@@ -24,9 +24,9 @@ contains
 
       print *, ' *** TEST 1 *** '
 
-      gen = op_generator_t(op=multiply_t(), num_args=2, args=[ &
+      gen = op_generator_t(op=multiply_t(), args=[ &
          op_generator_t_arg_t(gen=value_generator_t(val=real_value(2.0_real_k))), &
-         op_generator_t_arg_t(gen=op_generator_t(op=add_t(), num_args=2, args=[&
+         op_generator_t_arg_t(gen=op_generator_t(op=add_t(), args=[&
          op_generator_t_arg_t(gen=value_generator_t(val=real_value(1.0_real_k))), &
          op_generator_t_arg_t(gen=value_generator_t(val=real_value(3.0_real_k))) &
          ]))])

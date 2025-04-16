@@ -1,7 +1,6 @@
 program test_parse_statement
 
 
-   use command_m
    use ast_m
    use parser_m
    use namespace_m

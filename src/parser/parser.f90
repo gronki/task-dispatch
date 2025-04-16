@@ -1,7 +1,6 @@
 module parser_m
 
 use tokenizer_m
-use command_m
 use str_value_m
 use operation_m
 use real_value_m

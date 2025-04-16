@@ -2,7 +2,6 @@ module runner_m
 
 use tokenizer_m
 use parser_m
-use command_m
 use ast_m
 use namespace_m
 use operation_database_m
