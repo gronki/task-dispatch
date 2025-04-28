@@ -41,7 +41,8 @@ subroutine exec_item(op, inputs, output, err)
    allocate(indices(index_depth))
 
    do i = 1, index_depth
-      call parse_int(inputs(i+1) % value, indices(i))
+      call parse_number(inputs(i+1) % value, to_int=indices(i), err=err)
+      if (check(err)) return
    end do
 
    call get_item_recursively(inputs(1) % value, indices, 1, output)

@@ -29,14 +29,14 @@ subroutine exec_pow(op, inputs, output, err)
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
    class(value_t), intent(out), allocatable :: output !! output/result
    type(err_t), intent(inout) :: err !! error
+   real(kind=f64) :: x, exponent
 
-   type(real_value_t), pointer :: x, exponent
+   call parse_number(inputs(1) % value, to_real=x, err=err)
+   call parse_number(inputs(2) % value, to_real=exponent, err=err)
 
-   x => real_ptr(inputs(1) % value, err)
-   exponent => real_ptr(inputs(2) % value, err)
    if (check(err)) return
 
-   output = real_value(x%value**exponent%value)
+   output = real_value(x**exponent)
 
 end subroutine
 

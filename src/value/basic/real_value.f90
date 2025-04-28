@@ -59,48 +59,24 @@ pure function real_value_to_str(value) result(str)
    str = trim(adjustl(buf))
 end function
 
-elemental subroutine parse_real(val, r, err)
-   class(value_t), intent(in) :: val
-   real(kind=real_k), intent(out) :: r
-   type(err_t), intent(out), optional :: err
-
-   select type(val)
-   type is (real_value_t)
-      r = val%value
-   class default
-      call seterr(err, "not a real value")
-   end select
-end subroutine
-
-elemental subroutine parse_int(val, i, err)
-   class(value_t), intent(in) :: val
-   integer, intent(out) :: i
-   type(err_t), intent(out), optional :: err
-
-   select type(val)
-   type is (real_value_t)
-      i = nint(val%value)
-   class default
-      call seterr(err, "not a real value")
-   end select
-end subroutine
-
-function real_ptr(val, err)
-   class(value_t), pointer :: val
-   type(err_t) :: err
-   type(real_value_t), pointer :: real_ptr
+pure subroutine parse_number(val, to_real, to_int, err)
+   class(value_t), pointer, intent(in) :: val
+   real(kind=real_k), intent(out), optional :: to_real
+   integer, intent(out), optional :: to_int
+   type(err_t), intent(inout), optional :: err
 
    if (.not. associated(val)) then
-      nullify(real_ptr)
+      call seterr(err, "null pointer given when numeric value expected")
       return
    end if
 
-   select type (val)
-   class is (real_value_t)
-      real_ptr => val
+   select type(val)
+   type is (real_value_t)
+      if (present(to_real)) to_real = val%value
+      if (present(to_int)) to_int = nint(val%value)
    class default
-      call seterr(err, "expected real value")
+      call seterr(err, "not a real value")
    end select
-end function
+end subroutine
 
 end module

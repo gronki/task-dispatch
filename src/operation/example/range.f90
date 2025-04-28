@@ -23,20 +23,20 @@ subroutine exec_range(op, inputs, output, err)
 
    integer :: i
    type(sequence_value_t) :: result
-   real(kind=real_k) :: lo, hi, n_steps_f
+   real(kind=real_k) :: lo, hi
    integer :: n_steps
 
    select case (size(inputs))
    case (1)
-      call parse_real(inputs(1) % value, n_steps_f)
-      n_steps = int(n_steps_f)
+      call parse_number(inputs(1) % value, to_int=n_steps, err=err)
+      if (check(err)) return
       lo = 1
       hi = n_steps
    case (3)
-      call parse_real(inputs(1) % value, lo)
-      call parse_real(inputs(2) % value, hi)
-      call parse_real(inputs(3) % value, n_steps_f)
-      n_steps = int(n_steps_f)
+      call parse_number(inputs(1) % value, to_real=lo, err=err)
+      call parse_number(inputs(2) % value, to_real=hi, err=err)
+      call parse_number(inputs(3) % value, to_int=n_steps, err=err)
+      if (check(err)) return
    case default
       call seterr( err, "range arguments: (start, stop, n_steps)" )
       return

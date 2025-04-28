@@ -45,11 +45,10 @@ subroutine simple_prompt(prompt, line)
    read (*, '(a)') line
 end subroutine
 
-subroutine run_interactive_console(prompt, operation_db, namespace, err)
+subroutine run_interactive_console(prompt, operation_db, namespace)
 
    character(len=4096) :: line
    type(namespace_t), target :: namespace
-   type(err_t), optional :: err
    type(operation_db_t) :: operation_db
    class(console_prompt_t) :: prompt
 
@@ -58,7 +57,10 @@ subroutine run_interactive_console(prompt, operation_db, namespace, err)
       if (adjustl(line) == "exit") exit
       if (line == "") cycle
 
-      call execute_console_line(line, operation_db, namespace, err)
+      block
+         type(err_t) :: err
+         call execute_console_line(line, operation_db, namespace, err)
+      end block
    end do
 contains
 
@@ -74,7 +76,7 @@ subroutine execute_console_line(line, operation_db, namespace, err)
    type(ast_statement_t) :: stmt
    class(generator_t), allocatable, target :: gen
    class(value_t), allocatable :: result
-   
+
    call tokenize_into_array(trim(line), tokens)
    call parse_statement(tokens, stmt, err)
 
