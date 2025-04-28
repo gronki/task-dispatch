@@ -9,6 +9,7 @@ program test_generator
    use operation_add_m
    use example_operations_m, only: get_example_operation_db
    use generator_from_ast_m
+   use namespace_m
    use parser_m, only: parse_expression_str
 
    call test_gen_1
@@ -55,12 +56,13 @@ contains
 
       class(generator_t), allocatable, target :: gen
       class(value_t), allocatable :: result
+      type(namespace_t), target :: ns
       type(ast_expression_t) :: expr
 
       print *, ' *** TEST 2 *** '
 
       call parse_expression_str("mul( 2, add(1, 3))", expr)
-      call build_generator(expr, gen, operation_db=get_example_operation_db())
+      call build_generator(expr, gen, operation_db=get_example_operation_db(), namespace=ns)
 
       call gen % yield(result)
 
@@ -86,12 +88,13 @@ contains
 
       class(generator_t), allocatable, target :: gen
       class(value_t), allocatable :: result
+      type(namespace_t), target :: ns
       type(ast_expression_t) :: expr
 
       print *, ' *** TEST 3 *** '
 
       call parse_expression_str("range(3) % mul(4) % item(2)", expr)
-      call build_generator(expr, gen, operation_db=get_example_operation_db())
+      call build_generator(expr, gen, operation_db=get_example_operation_db(), namespace=ns)
 
       call gen % yield(result)
 
@@ -108,7 +111,6 @@ contains
 
    subroutine test_gen_4
       use example_operations_m
-      use namespace_m
 
       class(generator_t), allocatable, target :: gen
       class(value_t), allocatable :: result

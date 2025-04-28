@@ -125,6 +125,7 @@ recursive subroutine exec_trace(op, inputs, output, err)
    ! here we handle a typical case, where none of the inputs is a sequence
    if (sequence_length == 0 .or. .not. op % is_elemental()) then
       call op % exec_one(inputs, output, err)
+      if (check(err)) return
       output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
       return
    end if
@@ -147,9 +148,9 @@ recursive subroutine exec_trace(op, inputs, output, err)
          call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
          associate (output_item => sequence_output%items(sequence_index))
             call exec_trace(op, temp_inputs, output_item%value, err)
+            if (check(err)) return 
             write (debug_output, *) ' sequence item ', sequence_index, ' ', &
                output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
-            if (check(err)) return
          end associate
       end do
    end select

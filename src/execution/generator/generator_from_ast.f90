@@ -132,7 +132,7 @@ subroutine execute_statement_generator(stmt, namespace, operation_db, gen, resul
 
    if (check(err)) return
 
-   call gen % yield(result)
+   call gen % yield(result, err)
    if (check(err)) return
 
    if (.not. stmt % is_assignment) return

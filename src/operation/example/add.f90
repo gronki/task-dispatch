@@ -36,6 +36,7 @@ subroutine exec_add(op, inputs, output, err)
          result % value = result % value + val % value
       class default
          call seterr( err, "add: unexpected input type" )
+         return
       end select
    end do
 

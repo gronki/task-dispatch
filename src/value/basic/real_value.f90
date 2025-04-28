@@ -85,4 +85,22 @@ elemental subroutine parse_int(val, i, err)
    end select
 end subroutine
 
+function real_ptr(val, err)
+   class(value_t), pointer :: val
+   type(err_t) :: err
+   type(real_value_t), pointer :: real_ptr
+
+   if (.not. associated(val)) then
+      nullify(real_ptr)
+      return
+   end if
+
+   select type (val)
+   class is (real_value_t)
+      real_ptr => val
+   class default
+      call seterr(err, "expected real value")
+   end select
+end function
+
 end module
