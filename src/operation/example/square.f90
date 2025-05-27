@@ -12,7 +12,7 @@ type, extends(operation_t) :: square_t
 contains
    procedure, nopass :: name => squared_name
    procedure :: exec_one => exec_square
-   procedure, nopass :: get_argspec
+   procedure, nopass :: get_info
 end type
 
 public :: square_t
@@ -41,12 +41,20 @@ pure function squared_name() result(name)
    name = "squared"
 end function
 
-pure subroutine get_argspec(argspec)
-   type(arg_entry_t), intent(inout), allocatable :: argspec(:)
+pure subroutine get_info(argspec, help)
+   type(arg_entry_t), intent(out), allocatable, optional :: argspec(:)
+   character(len=:), intent(out), allocatable, optional :: help
 
-   argspec = [ &
-      arg_entry_t(pos=1, name="x") &
-   &]
+   if (present(argspec)) then
+      argspec = [ &
+         arg_entry_t(pos=1, name="x") &
+      &]
+   end if
+
+   if (present(help)) then
+      help = "Raises scalar to the power of 2."
+   end if
+
 end subroutine
 
 end module

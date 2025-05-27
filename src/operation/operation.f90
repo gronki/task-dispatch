@@ -17,7 +17,7 @@ contains
    procedure :: exec_trace
    procedure, nopass :: is_elemental
    procedure(opname_proto), nopass, deferred :: name
-   procedure, nopass :: get_argspec
+   procedure, nopass :: get_info
 end type operation_t
 
 public :: operation_t
@@ -191,8 +191,9 @@ pure function is_elemental()
    is_elemental = .true.
 end function is_elemental
 
-pure subroutine get_argspec(argspec)
-   type(arg_entry_t), intent(inout), allocatable :: argspec(:)
+pure subroutine get_info(argspec, help)
+   type(arg_entry_t), intent(out), allocatable, optional :: argspec(:)
+   character(len=:), intent(out), allocatable, optional :: help
 end subroutine
 
 end module operation_m

@@ -12,7 +12,7 @@ type, extends(operation_t) :: op_pow_t
 contains
    procedure, nopass :: name => powd_name
    procedure :: exec_one => exec_pow
-   procedure, nopass :: get_argspec
+   procedure, nopass :: get_info
 end type
 
 public :: op_pow_t
@@ -46,10 +46,16 @@ pure function powd_name() result(name)
    name = "pow"
 end function
 
-pure subroutine get_argspec(argspec)
-   type(arg_entry_t), intent(inout), allocatable :: argspec(:)
+pure subroutine get_info(argspec, help)
+   type(arg_entry_t), intent(out), allocatable, optional :: argspec(:)
+   character(len=:), intent(out), allocatable, optional :: help
 
-   argspec = pow_argspec
+   if (present(argspec)) &
+      argspec = pow_argspec
+
+   if (present(help)) &
+      help = "Performs the power operation on a scalar."
+
 end subroutine
 
 end module

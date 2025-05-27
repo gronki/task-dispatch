@@ -97,7 +97,7 @@ recursive subroutine op_generator_from_ast(val_expr, gen, namespace, operation_d
    match_args: block
       type(arg_entry_t), allocatable :: argspec(:)
 
-      call op % get_argspec(argspec)
+      call op % get_info(argspec=argspec)
 
       if (.not. allocated(argspec)) then
          exit match_args
