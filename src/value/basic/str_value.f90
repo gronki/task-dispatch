@@ -1,5 +1,6 @@
 module str_value_m
 use value_m
+use error_m
 use, intrinsic :: iso_fortran_env, only: f64 => real64
 
 implicit none (type, external)
@@ -48,5 +49,18 @@ pure function str_value_to_str(value) result(str)
    str = """"""
 end function
 
+subroutine parse_str(from, to, err)
+   class(value_t), intent(in) :: from
+   character(len=:), allocatable, intent(inout) :: to
+   type(err_t), intent(out), optional :: err
+
+   select type(from)
+   class is (str_value_t)
+      to = from % value
+      return
+   end select
+
+   call seterr( err, "expected string but got: " // from % to_str() )
+end subroutine
 
 end module
