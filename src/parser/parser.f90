@@ -199,6 +199,7 @@ recursive subroutine parse_recursive(tokens, expr, err)
             args=op_args(:num_args), keys=op_arg_keys(:num_args), loc=ident_token%loc))
       else
          call ast_expression_copy(expr, from = ast_expression_t(opname, num_args, loc=ident_token%loc))
+         allocate(expr % op_args(0), expr % op_arg_keys(0))
       end if
       return
 

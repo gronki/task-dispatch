@@ -52,7 +52,7 @@ end function
 subroutine parse_str(from, to, err)
    class(value_t), intent(in) :: from
    character(len=:), allocatable, intent(inout) :: to
-   type(err_t), intent(out), optional :: err
+   type(err_t), intent(inout), optional :: err
 
    select type(from)
    class is (str_value_t)

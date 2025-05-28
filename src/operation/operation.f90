@@ -125,7 +125,13 @@ recursive subroutine exec_trace(op, inputs, output, err)
    ! here we handle a typical case, where none of the inputs is a sequence
    if (sequence_length == 0 .or. .not. op % is_elemental()) then
       call op % exec_one(inputs, output, err)
+
       if (check(err)) return
+      if (.not. allocated(output)) then
+         call seterr( err, "operation did not yield any output: " // trim(op%name()) )
+         return
+      end if
+
       output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
       return
    end if
