@@ -22,10 +22,11 @@ contains
 end type
 
 abstract interface
-subroutine prompt_iface(prompt, line)
+subroutine prompt_iface(prompt, line, eof)
    import :: console_prompt_t
    class(console_prompt_t) :: prompt
    character(len=*), intent(out) :: line
+   logical, intent(out) :: eof
 end subroutine
 end interface
 
@@ -38,11 +39,15 @@ end type
 
 contains
 
-subroutine simple_prompt(prompt, line)
+subroutine simple_prompt(prompt, line, eof)
    class(simple_prompt_t) :: prompt
    character(len=*), intent(out) :: line
+   logical, intent(out) :: eof
+   integer :: iostat
+
    write (*, '(a)', advance='no') '> '
-   read (*, '(a)') line
+   read (*, '(a)', iostat=iostat) line
+   eof = iostat /= 0
 end subroutine
 
 subroutine run_interactive_console(prompt, operation_db, namespace)
@@ -51,9 +56,11 @@ subroutine run_interactive_console(prompt, operation_db, namespace)
    type(namespace_t), target :: namespace
    type(operation_db_t) :: operation_db
    class(console_prompt_t) :: prompt
+   logical :: eof
 
    do
-      call prompt % input(line)
+      call prompt % input(line, eof)
+      if (eof) exit
       if (adjustl(line) == "exit") exit
       if (line == "") cycle
 
