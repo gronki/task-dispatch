@@ -120,11 +120,12 @@ end subroutine
 
 subroutine execute_statement_generator(stmt, namespace, operation_db, gen, result, err)
    type(ast_statement_t), intent(in) :: stmt
-   class(value_t), intent(out), allocatable :: result
+   class(value_t), intent(out), allocatable, optional :: result
    type(namespace_t), intent(inout) :: namespace
    type(operation_db_t), intent(in) :: operation_db
    type(err_t), intent(out), optional :: err
    class(generator_t), allocatable, target :: gen
+   class(value_t), allocatable :: internal_result
 
    call build_generator(stmt % rhs, gen, &
       operation_db=operation_db, &
@@ -132,12 +133,16 @@ subroutine execute_statement_generator(stmt, namespace, operation_db, gen, resul
 
    if (check(err)) return
 
-   call gen % yield(result, err)
+   call gen % yield(internal_result, err)
    if (check(err)) return
 
+   if (present(result)) then
+      result = internal_result
+   end if
+   
    if (.not. stmt % is_assignment) return
 
-   call namespace % move_in(trim(stmt % lhs_refname), result, err)
+   call namespace % move_in(trim(stmt % lhs_refname), internal_result, err)
 
 end subroutine
 

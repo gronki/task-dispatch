@@ -85,7 +85,7 @@ subroutine execute_console_line(line, operation_db, namespace, err)
       return
    end if
 
-   call execute_statement_generator(stmt, namespace, operation_db, gen, result, err)
+   call execute_statement_generator(stmt, namespace, operation_db, gen, result, err=err)
 
    if (check(err)) then
       write(*, '(dt)') error_with_line(err, line)

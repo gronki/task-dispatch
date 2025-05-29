@@ -22,7 +22,7 @@ subroutine exec_range(op, inputs, output, err)
    type(err_t), intent(inout) :: err !! error
 
    integer :: i
-   type(sequence_value_t) :: result
+   type(sequence_value_t), allocatable :: result
    real(kind=real_k) :: lo, hi
    integer :: n_steps
 
@@ -47,19 +47,20 @@ subroutine exec_range(op, inputs, output, err)
       return
    end if
 
+   allocate(result)
    allocate(result%items(n_steps))
 
    if (n_steps == 1) then
       allocate(result % items(1) % value, &
-         source=real_value((hi + lo) / 2))
+      source=real_value((hi + lo) / 2))
    else
       do i = 1, n_steps
          allocate(result % items(i) % value, &
-            source=real_value(lo + (hi - lo) * (i - 1) / (n_steps - 1)))
+         source=real_value(lo + (hi - lo) * (i - 1) / (n_steps - 1)))
       end do
    end if
-
-   output = result
+   
+   call move_alloc(result, output)
 
 end subroutine
 
