@@ -32,7 +32,10 @@ program test_parser
 
       call assertm(expr%argtype == ARG_CALL)
       call assertm(expr%op_name == 'fun')
+      call assertm(allocated(expr % op_args))
       call assertm(size(expr%op_args) == 1)
+      call assertm(allocated(expr % op_arg_keys))
+      call assertm(size(expr%op_arg_keys) == 1)
       call assertm(expr%op_args(1)%argtype == ARG_CONSTANT)
 
       select type (val=>expr%op_args(1)%constant)
@@ -99,6 +102,20 @@ program test_parser
       print '(/a/dt/a/)', '---\/ THIS ERROR IS DESIRED \/---', err, '---/\ THIS ERROR IS DESIRED /\---'
    end block
 
+
+   block
+      type(ast_expression_t) :: expr
+      type(err_t) :: err
+
+      expr = parse("fun()", err)
+
+      call assertm(expr%argtype == ARG_CALL)
+      call assertm(expr%op_name == 'fun')
+      call assertm(allocated(expr % op_args))
+      call assertm(size(expr%op_args) == 0)
+      call assertm(allocated(expr % op_arg_keys))
+      call assertm(size(expr%op_arg_keys) == 0)
+   end block
 
 contains
 
