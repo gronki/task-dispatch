@@ -75,29 +75,6 @@ recursive subroutine get_item_recursively(input, indices, depth, output)
 
 end subroutine
 
- ! function trace_item(op, input_traces) result(output_trace)
- !     !! Produces a generic trace for any operation following
- !     !! the pattern: opname(trace_arg1, trace_arg2, ...)
- !     !> operation
- !     class(op_item_t), intent(in) :: op
- !     !> operation inputs
- !     type(value_trace_t), intent(in) :: input_traces(:)
- !     !> string trace
- !     type(value_trace_t) :: output_trace
- !     integer :: i, num_inputs
-
- !     num_inputs = size(input_traces)
- !     output_trace % str = "["
-
- !     do i = 1, num_inputs
- !         associate (arg_trace => input_traces(i))
- !             output_trace % str = output_trace % str &
- !                 // trim(arg_trace % str) &
- !                 // adjustl(trim(merge(" ,", "] ", i < num_inputs)))
- !         end associate
- !     end do
- ! end function
-
 pure function item_name()
    character(len=32) :: item_name
 

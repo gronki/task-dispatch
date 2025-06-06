@@ -4,6 +4,7 @@ use value_m, only: value_t, value_trace_t, value_trace_t
 use sequence_value_m
 use operation_m
 use str_value_m
+use input_args_m
 use error_m
 implicit none (type, external)
 private
