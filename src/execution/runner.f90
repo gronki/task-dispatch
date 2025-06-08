@@ -99,8 +99,7 @@ subroutine execute_console_line(line, operation_db, namespace, err)
       return
    end if
 
-   print *, "generator trace -> ", gen%trace()
-   print *, "result trace -> ", result%get_trace()
+   print *, "TRACE :: ", result%get_trace()
    print *, " = ", result%to_str()
 end subroutine
 

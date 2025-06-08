@@ -31,6 +31,7 @@ recursive subroutine parse_function_argument(tokens, expr, kw, err)
 
       kw%has_key = .true.
       kw%key = label_name
+      kw%loc = token1%loc
    else
       kw%has_key = .false.
    end if

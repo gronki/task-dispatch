@@ -4,6 +4,8 @@ use value_m
 use characters_m
 use error_m
 use yaftree_m
+use tokenizer_m, only: token_loc_t
+use line_error_m
 
 implicit none (type, external)
 private
@@ -13,6 +15,7 @@ integer, parameter :: key_max_len = 32
 type input_key_t
    logical :: has_key = .false.
    character(len=key_max_len) :: key = ""
+   type(token_loc_t) :: loc
 end type input_key_t
 
 public :: input_key_t
@@ -126,7 +129,8 @@ subroutine collect_keys(argspec, actual_keys, key_positions, err)
       if (.not. actual_keys(ikey) % has_key) then
          ! ensure we are in positional argument half
          if (keyword_section) then
-            call seterr( err, "Positional arguments are not allowed to follow keyword arguments." )
+            call seterr( err, "Positional arguments are not allowed to follow keyword arguments.", &
+               actual_keys(ikey) % loc )
             return
          end if
 
@@ -136,14 +140,14 @@ subroutine collect_keys(argspec, actual_keys, key_positions, err)
          current_key = trim(actual_keys(ikey) % key)
 
          if (current_key .notin. valid_keys) then
-            call seterr( err, "Unknown argument: " // current_key // "." )
+            call seterr( err, "Unknown argument: " // current_key // ".",  actual_keys(ikey) % loc )
             return
          end if
 
       end if
 
       if (current_key .in. key_positions) then
-         call seterr( err, "Duplicate key: " // current_key // "." )
+         call seterr( err, "Duplicate key: " // current_key // ".",  actual_keys(ikey) % loc )
          return
       end if
 

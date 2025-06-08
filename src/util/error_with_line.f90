@@ -110,7 +110,7 @@ subroutine write_one_error_line(err_w_line, unit, message_text, iostat, iomsg)
 
    read (message_text, '(dt, 2x, a)', iostat=read_iostat) loc, message_body
 
-   if (read_iostat /= 0) then
+   if (read_iostat /= 0 .or. (read_iostat == 0 .and. loc%offset < 1)) then
       ! no line info
       write(unit, '(a, a)', iostat=iostat, iomsg=iomsg) &
          err_w_line%error_prefix, trim(message_text)
