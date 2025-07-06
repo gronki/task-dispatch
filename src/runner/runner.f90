@@ -14,10 +14,11 @@ use generator_from_ast_m, only: execute_statement_generator
 implicit none (type, external)
 private
 
-public :: run_interactive_console, simple_prompt_t
+public :: run_interactive_console
 
 type, abstract :: console_prompt_t
 contains
+   procedure :: init => default_console_init
    procedure(prompt_iface), deferred :: input
 end type
 
@@ -32,22 +33,10 @@ end interface
 
 public :: console_prompt_t
 
-type, extends(console_prompt_t) :: simple_prompt_t
-contains
-   procedure :: input => simple_prompt
-end type
-
 contains
 
-subroutine simple_prompt(prompt, line, eof)
-   class(simple_prompt_t) :: prompt
-   character(len=*), intent(out) :: line
-   logical, intent(out) :: eof
-   integer :: iostat
-
-   write (*, '(a)', advance='no') '> '
-   read (*, '(a)', iostat=iostat) line
-   eof = iostat /= 0
+subroutine default_console_init(prompt)
+   class(console_prompt_t), intent(inout) :: prompt
 end subroutine
 
 subroutine run_interactive_console(prompt, operation_db, namespace)
@@ -57,6 +46,8 @@ subroutine run_interactive_console(prompt, operation_db, namespace)
    type(operation_db_t) :: operation_db
    class(console_prompt_t) :: prompt
    logical :: eof
+
+   call prompt % init
 
    do
       call prompt % input(line, eof)

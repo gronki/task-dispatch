@@ -5,6 +5,7 @@ program test_console
    use operation_database_m
    use example_operations_m
    use runner_m
+   use simple_prompt_m
 
    type(namespace_t), target :: namespace
    type(operation_db_t) :: operation_db
