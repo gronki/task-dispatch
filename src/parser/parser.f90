@@ -41,7 +41,7 @@ end subroutine
 
 recursive subroutine parse_expression(tokens, expr, err)
    type(tok_array_t), intent(inout) :: tokens
-   type(ast_expression_t), intent(inout) :: expr
+   type(ast_expression_t), intent(out) :: expr
    type(ast_expression_t) :: child_expr
    type(token_t) :: token
    type(err_t), intent(out), optional :: err
@@ -90,7 +90,7 @@ recursive subroutine parse_expression(tokens, expr, err)
          allocate(expr%op_arg_keys(num_total_args))
 
          call ast_expression_copy( to = expr % op_args(1), from = child_expr )
-         expr%op_arg_keys(1) = input_key_t(has_key=.false.)
+         expr%op_arg_keys(1) = input_key_t()
 
          do iarg = 2, num_total_args
             call ast_expression_copy( to = expr % op_args(iarg), from = following_expr % op_args(iarg-1) )
@@ -122,7 +122,7 @@ end subroutine
 
 recursive subroutine parse_recursive(tokens, expr, err)
    type(tok_array_t), intent(inout) :: tokens
-   type(ast_expression_t), intent(inout) :: expr
+   type(ast_expression_t), intent(out) :: expr
    type(token_t) :: token, ident_token
    type(err_t), intent(out), optional :: err !! error object
 

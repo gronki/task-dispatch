@@ -17,6 +17,7 @@ private
 public :: run_interactive_console
 
 type, abstract :: console_prompt_t
+   logical :: halt_on_error = .false.
 contains
    procedure :: init => default_console_init
    procedure(prompt_iface), deferred :: input
@@ -51,17 +52,19 @@ subroutine run_interactive_console(prompt, operation_db, namespace)
 
    do
       call prompt % input(line, eof)
+      line = adjustl(line)
       if (eof) exit
-      if (adjustl(line) == "exit") exit
+      if (line == "exit") exit
       if (line == "") cycle
+      if (line(1:1) == "!") cycle
 
       block
          type(err_t) :: err
          call execute_console_line(line, operation_db, namespace, err)
+
+         if (prompt % halt_on_error .and. check(err)) return
       end block
    end do
-contains
-
 end subroutine
 
 subroutine execute_console_line(line, operation_db, namespace, err)
