@@ -1,5 +1,6 @@
 module value_m
 use iso_fortran_env, only: debug_output => error_unit
+use error_m
 implicit none (type, external)
 private
 
@@ -21,6 +22,7 @@ type, abstract :: value_t
 contains
    procedure :: get_trace
    procedure :: to_str
+   procedure :: write => value_write
    procedure :: cleanup => value_cleanup
 end type
 
@@ -81,6 +83,14 @@ recursive subroutine value_cleanup(val)
    class(value_t), intent(inout) :: val
 
    write (debug_output, *) "DEL ", val % to_str()
+end subroutine
+
+subroutine value_write(val, fn, err)
+   class(value_t), intent(in) :: val
+   character(len=*), intent(in) :: fn
+   type(err_t), intent(out) :: err
+   
+   call seterr(err, "writing for this datatype is not implemented")
 end subroutine
 
 elemental function traces_are_equal(trace, other_trace)
