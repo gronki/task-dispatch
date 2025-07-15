@@ -9,7 +9,6 @@ use line_error_m
 use ast_m
 implicit none (type, external)
 
-
 contains
 
 recursive subroutine parse_function_argument(tokens, expr, kw, err)

@@ -1,7 +1,7 @@
 module line_error_m
 
 use error_m
-use tokenizer_m, only: token_loc_t
+use token_m, only: token_loc_t
 
 implicit none (type, external)
 private

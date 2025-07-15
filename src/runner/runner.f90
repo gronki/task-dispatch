@@ -78,23 +78,21 @@ subroutine execute_console_line(line, operation_db, namespace, err)
    class(generator_t), allocatable, target :: gen
    class(value_t), allocatable :: result
 
-   call tokenize_into_array(trim(line), tokens)
-   call parse_statement(tokens, stmt, err)
+   try: block
+      call tokenize_into_array(trim(line), tokens, err)
+      if (check(err)) exit try
+      call parse_statement(tokens, stmt, err)
+      if (check(err)) exit try
 
-   if (check(err)) then
-      write(*, '(dt)') error_with_line(err, line)
-      return
-   end if
+      call execute_statement_generator(stmt, namespace, operation_db, gen, result, err=err)
+      if (check(err)) exit try
 
-   call execute_statement_generator(stmt, namespace, operation_db, gen, result, err=err)
+      print *, "TRACE :: ", result%get_trace()
+      print *, " = ", result%to_str()
+   end block try
 
-   if (check(err)) then
-      write(*, '(dt)') error_with_line(err, line)
-      return
-   end if
+   if (check(err))  write(*, '(dt)') error_with_line(err, line)
 
-   print *, "TRACE :: ", result%get_trace()
-   print *, " = ", result%to_str()
 end subroutine
 
 end module
