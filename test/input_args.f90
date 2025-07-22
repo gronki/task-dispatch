@@ -111,6 +111,58 @@ program test_input_args
       type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
+      & arg_entry_t(pos=1, name="arg1"), &
+      & arg_entry_t(pos=2, name="arg2", required=.false.), &
+      & arg_entry_t(pos=3, name="arg3", default=real_value_t(value=33.0_real_k)) ]
+
+      actual_keys = [ input_key_t(has_key=.false.)]
+
+      actual_args = [ &
+      & value_item_t(value=real_value_t(value=1.0_real_k))  ]
+
+      allocate(match(size(argspec)))
+
+      call match_arguments(argspec, actual_keys, match, err)
+
+      if (check(err)) then
+         print *, err
+         error stop "error matching arguments"
+      end if
+
+      actual_args_refs = connect_matched_args(item_to_ref(actual_args), match)
+
+      select type (valptr => actual_args_refs(1) % value)
+      type is (real_value_t)
+         if (valptr % value /= 1.0_real_k) error stop "arg1"
+         print *, "arg1: ", valptr % value
+      class default
+         error stop "arg1: incorrect return type!"
+      end select
+
+      select type (valptr => actual_args_refs(3) % value)
+      type is (real_value_t)
+         if (valptr % value /= 33.0_real_k) error stop "arg3"
+         print *, "arg3: ", valptr % value
+      class default
+         error stop "arg3: incorrect return type!"
+      end select
+
+      if (associated(actual_args_refs(2) % value)) then
+         error stop "arg2 associated"
+      end if
+
+   end block
+
+   block
+
+      type(arg_entry_t), allocatable :: argspec(:)
+      type(argument_match_t), allocatable, target :: match(:)
+      type(input_key_t), allocatable :: actual_keys(:)
+      type(value_item_t), allocatable, target :: actual_args(:)
+      type(err_t) :: err
+      type(value_ref_t), allocatable :: actual_args_refs(:)
+
+      argspec = [ &
       & arg_entry_t(pos=1, name="arg1", default=real_value_t(value=11.0_real_k)), &
       & arg_entry_t(pos=2, name="arg2"), &
       & arg_entry_t(pos=3, name="arg3", default=real_value_t(value=33.0_real_k)) ]

@@ -132,7 +132,7 @@ recursive subroutine exec_trace(op, inputs, output, err)
          return
       end if
 
-      output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
+      output % trace = op % trace([(inputs(i) % get_trace(), i = 1, num_inputs)])
       return
    end if
 
@@ -148,7 +148,7 @@ recursive subroutine exec_trace(op, inputs, output, err)
    type is (sequence_value_t)
 
       allocate(sequence_output%items(sequence_length))
-      sequence_output % trace = op % trace([(inputs(i) % value % get_trace(), i = 1, num_inputs)])
+      sequence_output % trace = op % trace([(inputs(i) % get_trace(), i = 1, num_inputs)])
 
       do sequence_index = 1, sequence_length
          call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
@@ -156,7 +156,7 @@ recursive subroutine exec_trace(op, inputs, output, err)
             call exec_trace(op, temp_inputs, output_item%value, err)
             if (check(err)) return 
             write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-               output_item % value % get_trace(), ' ---> ',  output_item%value%to_str()
+               output_item % get_trace(), ' ---> ',  output_item%value%to_str()
          end associate
       end do
    end select

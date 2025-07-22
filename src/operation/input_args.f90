@@ -25,6 +25,7 @@ type :: arg_entry_t
    integer :: pos
    character(len=key_max_len) :: name
    class(value_t), allocatable :: default
+   logical :: required = .true.
 end type
 
 public :: arg_entry_t
@@ -79,7 +80,7 @@ subroutine check_argspec_integrity(argspec, err)
          return
       end if
 
-      current_is_keyword = allocated(argspec(iarg) % default)
+      current_is_keyword = allocated(argspec(iarg) % default) .or. .not. argspec(iarg) % required
       if (current_is_keyword) keyword_section = .true.
 
       if (.not. is_correct_ident(trim(argspec(iarg) % name))) then
@@ -195,12 +196,15 @@ subroutine match_arguments(argspec, actual_keys, match, err)
 
       type is (key_not_found_t)
          ! this argument was not given
+         match(iarg) % matched_pos = -1
+
+         if (.not. argspec(iarg) % required) cycle
+
          if (.not. allocated(argspec(iarg) % default)) then
             call seterr( err, "Argument " // trim(argspec(iarg) % name) // " required." )
             return
          end if
 
-         match(iarg) % matched_pos = -1
          allocate( match(iarg) % default, source = argspec(iarg) % default )
       end select
    end do
@@ -224,7 +228,10 @@ function connect_matched_args(refs, match) result(matched_refs)
          ! default
          matched_refs(iarg) = protect(match(iarg) % default)
       else
-         if (match(iarg) % matched_pos == -1) error stop
+         if (match(iarg) % matched_pos == -1) then
+            nullify(matched_refs(iarg) % value)
+            cycle
+         end if
          matched_refs(iarg) = refs(match(iarg) % matched_pos) 
       end if
    end do
@@ -244,7 +251,10 @@ pure function connect_matched_traces(input_traces, match) result(expanded_traces
          ! default
          expanded_traces(iarg) = match(iarg) % default % get_trace()
       else
-         if (match(iarg) % matched_pos == -1) error stop
+         if (match(iarg) % matched_pos == -1) then
+            expanded_traces(iarg) % str = "(none)"
+            cycle
+         end if
          expanded_traces(iarg) = input_traces(match(iarg) % matched_pos)
       end if
    end do

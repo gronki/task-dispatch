@@ -1,6 +1,7 @@
 program test_tokenizer
 
    use tokenizer_m
+   use token_m
    use test_assert_m
 
    implicit none (type, external)
@@ -26,20 +27,11 @@ contains
       call assert(token_t(type=token_end) /= token_t(type=token_ident, value="a"), &
          'token_t(type=token_end) /= token_t(type=token_ident, value="a")')
 
-      call assert_not (tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_ident, value="a")), &
-         'tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_ident, value="a"))')
-
       call assert_not  (token_t(type=token_ident, value="b") == token_t(type=token_ident, value="a"), &
          'token_t(type=token_ident, value="b") == token_t(type=token_ident, value="a")')
 
       call assert (token_t(type=token_ident, value="b") /= token_t(type=token_ident, value="a"), &
          'token_t(type=token_ident, value="b") /= token_t(type=token_ident, value="a")')
-
-      call assert (tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_ident, value="b")), &
-         'tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_ident, value="b"))')
-
-      call assert_not  (tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_str_literal, value="b")), &
-         'tokens_are_equal(token_t(type=token_ident, value="b"), token_t(type=token_str_literal, value="b"))')
 
    end subroutine
 

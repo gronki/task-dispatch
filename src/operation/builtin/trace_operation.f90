@@ -36,7 +36,7 @@ subroutine exec_one(op, inputs, output, err)
    end if
 
    allocate(result)
-   trace = inputs(1) % value % get_trace()
+   trace = inputs(1) % get_trace()
    result % value = trace % str
 
    call move_alloc(result, output)

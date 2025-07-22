@@ -30,6 +30,9 @@ public :: value_t
 
 type value_item_t
    class(value_t), allocatable :: value
+contains
+   procedure, non_overridable :: to_str =>  value_item_to_str
+   procedure, non_overridable :: get_trace => get_trace_safe_item
 end type
 
 public :: value_item_t
@@ -39,7 +42,8 @@ type :: value_ref_t
    integer, pointer, private :: refcounter => null()
    logical, private :: protect = .false.
 contains
-   procedure :: to_str => value_ref_to_str
+   procedure, non_overridable :: to_str => value_ref_to_str
+   procedure, non_overridable :: get_trace => get_trace_safe_ref
 end type
 
 interface keep
@@ -89,7 +93,7 @@ subroutine value_write(val, fn, err)
    class(value_t), intent(in) :: val
    character(len=*), intent(in) :: fn
    type(err_t), intent(out) :: err
-   
+
    call seterr(err, "writing for this datatype is not implemented")
 end subroutine
 
@@ -118,6 +122,28 @@ pure function to_str(value) result(str)
    error stop "no string representation for this value type. override to_str to implement"
 end function
 
+pure function get_trace_safe_ref(value_ref) result(trace)
+   class(value_ref_t), intent(in) :: value_ref
+   type(value_trace_t) :: trace
+
+   if (associated(value_ref % value)) then
+      trace = value_ref % value % get_trace()
+   else
+      trace % str = "(none)"
+   end if
+end function
+
+pure function get_trace_safe_item(value_item) result(trace)
+   class(value_item_t), intent(in) :: value_item
+   type(value_trace_t) :: trace
+
+   if (allocated(value_item % value)) then
+      trace = value_item % value % get_trace()
+   else
+      trace % str = "(none)"
+   end if
+end function
+
 function value_ref_to_str(value_ref) result(str)
    class(value_ref_t), intent(in) :: value_ref
    character(len=:), allocatable :: str
@@ -137,6 +163,20 @@ function value_ref_to_str(value_ref) result(str)
    if (value_ref%protect) suff = "!"
 
    str = trim(suff) // value_ref % value % to_str()
+
+end function
+
+function value_item_to_str(value_ref) result(str)
+   class(value_item_t), intent(in) :: value_ref
+   character(len=:), allocatable :: str
+   character(len=12) :: suff
+
+   if (.not. allocated(value_ref%value)) then
+      str = "null"
+      return
+   end if
+
+   str = value_ref % value % to_str()
 
 end function
 
@@ -166,12 +206,8 @@ impure elemental function keep_ref(ref) result(kept)
 end function
 
 function keep_val(val) result(kept)
-   class(value_t), intent(in), pointer :: val
+   class(value_t), intent(in), target :: val
    type(value_ref_t) :: kept
-
-   if ( .not. associated(val) ) then
-      error stop "attempting to increase refcount of a null reference"
-   end if
 
    kept % value => val
    allocate( kept % refcounter )
