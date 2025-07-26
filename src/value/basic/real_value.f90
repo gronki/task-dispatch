@@ -19,6 +19,11 @@ end interface
 
 integer, parameter :: real_k = f64
 
+interface parse_number
+module procedure :: as_real
+module procedure :: as_int
+end interface
+
 contains
 
 elemental function real_value_from_real(value, trace) result(value_obj)
@@ -59,11 +64,11 @@ pure function real_value_to_str(value) result(str)
    str = trim(adjustl(buf))
 end function
 
-pure subroutine parse_number(val, to_real, to_int, err)
+pure subroutine as_int(val, to_int, err, errmsg)
    class(value_t), pointer, intent(in) :: val
-   real(kind=real_k), intent(out), optional :: to_real
-   integer, intent(out), optional :: to_int
+   integer, intent(out) :: to_int
    type(err_t), intent(inout), optional :: err
+   character(len=*), intent(in), optional :: errmsg
 
    if (.not. associated(val)) then
       call seterr(err, "null pointer given when numeric value expected")
@@ -72,10 +77,36 @@ pure subroutine parse_number(val, to_real, to_int, err)
 
    select type(val)
    type is (real_value_t)
-      if (present(to_real)) to_real = val%value
-      if (present(to_int)) to_int = nint(val%value)
+      to_int = nint(val%value)
    class default
-      call seterr(err, "not a real value")
+      if (present(errmsg)) then
+         call seterr(err, errmsg)
+      else
+         call seterr(err, "not an int value")
+      end if
+   end select
+end subroutine
+
+pure subroutine as_real(val, to_real, err, errmsg)
+   class(value_t), pointer, intent(in) :: val
+   real(kind=real_k), intent(out) :: to_real
+   type(err_t), intent(inout), optional :: err
+   character(len=*), intent(in), optional :: errmsg
+
+   if (.not. associated(val)) then
+      call seterr(err, "null pointer given when numeric value expected")
+      return
+   end if
+
+   select type(val)
+   type is (real_value_t)
+      to_real = val%value
+   class default
+      if (present(errmsg)) then
+         call seterr(err, errmsg)
+      else
+         call seterr(err, "not a real value")
+      end if
    end select
 end subroutine
 
