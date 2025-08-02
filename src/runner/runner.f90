@@ -40,13 +40,14 @@ subroutine default_console_init(prompt)
    class(console_prompt_t), intent(inout) :: prompt
 end subroutine
 
-subroutine run_interactive_console(prompt, operation_db, namespace)
+subroutine run_interactive_console(prompt, operation_db, namespace, err)
 
    character(len=4096) :: line
    type(namespace_t), target :: namespace
    type(operation_db_t) :: operation_db
    class(console_prompt_t) :: prompt
    logical :: eof
+   type(err_t), intent(out) :: err
 
    call prompt % init
 
@@ -57,20 +58,18 @@ subroutine run_interactive_console(prompt, operation_db, namespace)
       if (line == "exit") exit
       if (line == "") cycle
       if (line(1:1) == "!") cycle
+      
+      call clear(err)
+      call execute_console_line(line, operation_db, namespace, err)
 
-      block
-         type(err_t) :: err
-         call execute_console_line(line, operation_db, namespace, err)
-
-         if (prompt % halt_on_error .and. check(err)) return
-      end block
+      if (prompt % halt_on_error .and. check(err)) return
    end do
 end subroutine
 
 subroutine execute_console_line(line, operation_db, namespace, err)
    character(len=4096) :: line
    type(namespace_t), target :: namespace
-   type(err_t), optional :: err
+   type(err_t), intent(out), optional :: err
    type(operation_db_t) :: operation_db
 
    type(tok_array_t) :: tokens

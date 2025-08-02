@@ -9,9 +9,10 @@ program test_console
 
    type(namespace_t), target :: namespace
    type(operation_db_t) :: operation_db
+   type(err_t) :: err
 
    operation_db = get_example_operation_db()
 
-   call run_interactive_console(simple_prompt_t(), operation_db, namespace)
+   call run_interactive_console(simple_prompt_t(), operation_db, namespace, err)
 
 end program
