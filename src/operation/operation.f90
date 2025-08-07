@@ -173,7 +173,7 @@ function trace_generic(op, input_traces) result(output_trace)
    type(value_trace_t), intent(in) :: input_traces(:)
    !> string trace
    type(value_trace_t) :: output_trace
-   character(len=4096) :: buf
+   character(len=16384) :: buf
    integer :: i, num_inputs
 
    num_inputs = size(input_traces)
