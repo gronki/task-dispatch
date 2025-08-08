@@ -1,0 +1,81 @@
+name: gfortran Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test_gfortran:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc-ver: [9, 10, 11, 12, 13, 14]
+    name: gfortran ${{ matrix.gcc-ver }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install gfortran ${{ matrix.gcc-ver }}
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gfortran-${{ matrix.gcc-ver }}
+          echo "FPM_FC=gfortran-${{ matrix.gcc-ver }}" >> $GITHUB_ENV
+          echo "FPM_CC=gcc-${{ matrix.gcc-ver }}" >> $GITHUB_ENV
+          echo "FPM_CXX=g++-${{ matrix.gcc-ver }}" >> $GITHUB_ENV
+
+      - name: Install fpm
+        run: |
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
+          $FPM_FC -O0 fpm.F90 -o fpm
+
+      - name: Run tests (debug)
+        run: ./fpm test --profile debug --flag '-ffree-line-length-none'
+
+      - name: Run tests (release)
+        run: ./fpm test --profile release --flag '-g -ffree-line-length-none'
+  test_intel:
+    runs-on: ubuntu-24.04
+    name: oneapi
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install oneapi
+        run: |
+          apt-get update
+          apt-get install -y gpg gpg-agent wget git curl
+          wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+            | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] " \
+            " https://apt.repos.intel.com/oneapi all main" \
+            | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          apt-get update && apt-get install -y --no-install-recommends \
+            intel-oneapi-compiler-fortran \
+            intel-oneapi-compiler-dpcpp-cpp 
+          echo "FPM_FC=ifx" >> $GITHUB_ENV
+          echo "FPM_CC=ifx" >> $GITHUB_ENV
+          echo "FPM_CXX=icpx" >> $GITHUB_ENV
+
+      - name: Install fpm
+        run: |
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
+          source /opt/intel/oneapi/setvars.sh
+          $FPM_FC -O0 fpm.F90 -o fpm
+
+      - name: Run tests (debug)
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          ./fpm test --profile debug
+
+      - name: Run tests (release)
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          ./fpm test --profile release --flag -g
