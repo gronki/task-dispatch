@@ -1,4 +1,4 @@
-name: gfortran Tests
+name: tests
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gcc-ver: [9, 10, 11, 12, 13, 14]
+        gcc-ver: [11, 12, 13, 14]
     name: gfortran ${{ matrix.gcc-ver }}
     steps:
       - name: Checkout code
@@ -50,8 +50,8 @@ jobs:
 
       - name: Install oneapi
         run: |
-          apt-get update
-          apt-get install -y gpg gpg-agent wget git curl
+          sudo apt-get update
+          sudo apt-get install -y gpg gpg-agent wget git curl
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
             | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] " \
@@ -61,7 +61,7 @@ jobs:
             intel-oneapi-compiler-fortran \
             intel-oneapi-compiler-dpcpp-cpp 
           echo "FPM_FC=ifx" >> $GITHUB_ENV
-          echo "FPM_CC=ifx" >> $GITHUB_ENV
+          echo "FPM_CC=icx" >> $GITHUB_ENV
           echo "FPM_CXX=icpx" >> $GITHUB_ENV
 
       - name: Install fpm
