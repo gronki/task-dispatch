@@ -34,7 +34,7 @@ jobs:
           $FPM_FC -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
-        run: ./fpm test --profile debug
+        run: ./fpm test --profile debug --flag '-ffree-line-length-none'
 
       - name: Run tests (release)
-        run: ./fpm test --flag '-O3 -funsafe-math-optimizations -g'
+        run: ./fpm test --flag '-O3 -funsafe-math-optimizations -g -ffree-line-length-none'
