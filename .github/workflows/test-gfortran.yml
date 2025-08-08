@@ -1,0 +1,34 @@
+name: gfortran Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gfortran-version: [11, 12, 13, 14]
+
+    name: gfortran-${{ matrix.gfortran-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install gfortran ${{ matrix.gfortran-version }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran-${{ matrix.gfortran-version }}
+          echo "FPM_FC=gfortran-${{ matrix.gfortran-version }}" >> $GITHUB_ENV
+
+      - name: Install fpm
+        run: |
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
+          $FPM_FC -O0 fpm.F90 -o fpm
+
+      - name: Run tests
+        run: ./fpm test
