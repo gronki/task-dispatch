@@ -8,24 +8,34 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        gfortran-version: [11, 12, 13, 14]
+        include:
+          - os: ubuntu-22.04
+            gcc-ver: 11
+          - os: ubuntu-22.04
+            gcc-ver: 12
+          - os: ubuntu-24.04
+            gcc-ver: 13
+          - os: ubuntu-24.04
+            gcc-ver: 14
+          - os: ubuntu-25.04
+            gcc-ver: 15
 
-    name: gfortran-${{ matrix.gfortran-version }}
+    name: gcc-${{ matrix.gcc-ver }}_${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install gfortran ${{ matrix.gfortran-version }}
+      - name: Install gfortran ${{ matrix.gcc-ver }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran-${{ matrix.gfortran-version }}
-          echo "FPM_FC=gfortran-${{ matrix.gfortran-version }}" >> $GITHUB_ENV
+          sudo apt-get install -y gfortran-${{ matrix.gcc-ver }}
+          echo "FPM_FC=gfortran-${{ matrix.gcc-ver }}" >> $GITHUB_ENV
 
       - name: Install fpm
         run: |
