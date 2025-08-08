@@ -8,23 +8,13 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-22.04
-            gcc-ver: 11
-          - os: ubuntu-22.04
-            gcc-ver: 12
-          - os: ubuntu-24.04
-            gcc-ver: 13
-          - os: ubuntu-24.04
-            gcc-ver: 14
-          - os: ubuntu-25.04
-            gcc-ver: 15
+        gcc-ver: [11, 12, 13, 14, 15]
 
-    name: gcc-${{ matrix.gcc-ver }}_${{ matrix.os }}
+    name: gcc-${{ matrix.gcc-ver }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,6 +23,7 @@ jobs:
 
       - name: Install gfortran ${{ matrix.gcc-ver }}
         run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
           sudo apt-get install -y gfortran-${{ matrix.gcc-ver }}
           echo "FPM_FC=gfortran-${{ matrix.gcc-ver }}" >> $GITHUB_ENV
@@ -42,5 +33,8 @@ jobs:
           curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
           $FPM_FC -O0 fpm.F90 -o fpm
 
-      - name: Run tests
-        run: ./fpm test
+      - name: Run tests (debug)
+        run: ./fpm test --profile debug
+
+      - name: Run tests (release)
+        run: ./fpm test --flag '-O3 -funsafe-math-optimizations -g'
