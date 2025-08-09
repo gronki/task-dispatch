@@ -31,7 +31,7 @@ jobs:
 
       - name: Install fpm
         run: |
-          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.12.0/fpm-0.12.0.F90 -o fpm.F90
           $FPM_FC -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
@@ -56,7 +56,7 @@ jobs:
       - name: Install oneapi
         run: |
           sudo apt-get update
-          sudo apt-get install -y gpg gpg-agent wget git curl
+          sudo apt-get install -y gpg gpg-agent wget git curl gfortran
           wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
             | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] " \
@@ -71,9 +71,9 @@ jobs:
 
       - name: Install fpm
         run: |
-          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.11.0/fpm-0.11.0.F90 -o fpm.F90
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.12.0/fpm-0.12.0.F90 -o fpm.F90
           source /opt/intel/oneapi/setvars.sh
-          $FPM_FC -O0 fpm.F90 -o fpm
+          gfortran -g -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
         run: |
