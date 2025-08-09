@@ -32,7 +32,7 @@ jobs:
       - name: Install fpm
         run: |
           curl -L https://github.com/fortran-lang/fpm/releases/download/v0.12.0/fpm-0.12.0.F90 -o fpm.F90
-          $FPM_FC -O0 fpm.F90 -o fpm
+          gfortran-${{ matrix.gcc-ver }} -g -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
         run: ./fpm test --profile debug --flag '-ffree-line-length-none'
@@ -123,7 +123,7 @@ jobs:
       - name: Install fpm
         run: |
           curl -L https://github.com/fortran-lang/fpm/releases/download/v0.12.0/fpm-0.12.0.F90 -o fpm.F90
-          gfortran -O -g fpm.F90 -o fpm
+          gfortran -g -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
         run: ./fpm test --flag '-g -O0'
