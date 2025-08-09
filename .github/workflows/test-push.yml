@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gcc-ver: [13, 14]
+        gcc-ver: [12, 13, 14]
     name: gfortran ${{ matrix.gcc-ver }}
     steps:
       - name: Checkout code
