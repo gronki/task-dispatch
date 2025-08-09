@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  test_gfortran:
+  gfortran:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -39,7 +39,8 @@ jobs:
 
       - name: Run tests (release)
         run: ./fpm test --profile release --flag '-g -ffree-line-length-none'
-  test_intel:
+
+  oneapi:
     runs-on: ubuntu-24.04
     name: oneapi
     steps:
@@ -79,3 +80,49 @@ jobs:
         run: |
           source /opt/intel/oneapi/setvars.sh
           ./fpm test --profile release --flag -g
+
+  flang:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm-ver: [19, 20]
+
+    name: flang ${{ matrix.llvm-ver }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install flang ${{ matrix.llvm-ver }}
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gnupg \
+            lsb-release \
+            ca-certificates \
+            curl \
+            gnupg2 \
+            apt-transport-https \
+            gfortran
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/llvm.asc >/dev/null
+          echo "deb [signed-by=/etc/apt/trusted.gpg.d/llvm.asc] http://apt.llvm.org/noble/ llvm-toolchain-noble-${{ matrix.llvm-ver }} main" \
+            | sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y clang-${{ matrix.llvm-ver }} flang-${{ matrix.llvm-ver }}
+          echo "FPM_FC=flang-new-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
+          echo "FPM_CC=clang-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
+          echo "FPM_CXX=clang-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
+
+      - name: Install fpm
+        run: |
+          curl -L https://github.com/fortran-lang/fpm/releases/download/v0.12.0/fpm-0.12.0.F90 -o fpm.F90
+          gfortran -O -g fpm.F90 -o fpm
+
+      - name: Run tests (debug)
+        run: ./fpm test --flag '-g -O0'
+
+      - name: Run tests (release)
+        run: ./fpm test --flag '-g -O3'
