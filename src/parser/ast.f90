@@ -132,7 +132,7 @@ end function
  !> This procedure performs a (deep) copy of AST nodes.
  !> This is only needed to work around gfortran bug
  !> preventing correct copies and causing double free error.
-recursive pure subroutine ast_expression_copy(to, from)
+recursive subroutine ast_expression_copy(to, from)
    !> Node to copy to.
    type(ast_expression_t), intent(inout) :: to
    !> Node to copy from.

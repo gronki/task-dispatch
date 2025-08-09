@@ -18,7 +18,7 @@ end type
 public :: value_trace_t
 
 type, abstract :: value_t
-   type(value_trace_t) :: trace
+   type(value_trace_t) :: trace = value_trace_t()
 contains
    procedure :: get_trace
    procedure :: to_str

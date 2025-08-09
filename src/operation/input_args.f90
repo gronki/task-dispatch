@@ -15,7 +15,7 @@ integer, parameter :: key_max_len = 32
 type input_key_t
    logical :: has_key = .false.
    character(len=key_max_len) :: key = ""
-   type(token_loc_t) :: loc
+   type(token_loc_t) :: loc = token_loc_t()
 end type input_key_t
 
 public :: input_key_t
@@ -115,6 +115,8 @@ subroutine collect_keys(argspec, actual_keys, key_positions, err)
    character(len=:), allocatable :: current_key
    type(set_t) :: valid_keys
 
+   valid_keys%hasher => fnv_hash
+
    keyword_section = .false.
 
    if (size(actual_keys) > size(argspec)) then
@@ -177,6 +179,8 @@ subroutine match_arguments(argspec, actual_keys, match, err)
 
    type(dict_t) :: key_positions
    integer :: iarg
+
+   key_positions % hasher => fnv_hash
 
    if (size(match) /= size(argspec)) then
       error stop "match_arguments: Dimensions of argspec and match must be the same."

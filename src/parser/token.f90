@@ -22,7 +22,7 @@ private :: token_loc_write_fmt, token_loc_read_fmt
 type, public :: token_t
    integer :: type = token_none
    character(len=:), allocatable :: value
-   type(token_loc_t) :: loc
+   type(token_loc_t) :: loc = token_loc_t()
 end type
 
 

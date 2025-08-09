@@ -29,7 +29,7 @@ public :: operation_db_init, fetch_operation, add_operation
 
 contains
 
-pure subroutine operation_db_init(operation_db)
+subroutine operation_db_init(operation_db)
    use operation_mksequence_m
    use operation_item_m
    use operation_trace_m
@@ -41,12 +41,12 @@ pure subroutine operation_db_init(operation_db)
    call add_operation(operation_db, op_trace_t())
 end subroutine
 
-pure function operation_db_new()
+function operation_db_new()
    type(operation_db_t) :: operation_db_new !! operation catalog
    call operation_db_init(operation_db_new)
 end function
 
-pure subroutine fetch_operation(operation_db, opname, op, err)
+subroutine fetch_operation(operation_db, opname, op, err)
    !! fetches an operation from the operation database based on its name
 
    type(operation_db_t), intent(in) :: operation_db !! operation catalog
@@ -93,7 +93,7 @@ pure subroutine fetch_operation(operation_db, opname, op, err)
 
 end subroutine
 
-pure subroutine add_operation(operation_db, op, err)
+subroutine add_operation(operation_db, op, err)
    !! fetches an operation from the operation database based on its name
 
    type(operation_db_t), intent(inout) :: operation_db !! operation catalog

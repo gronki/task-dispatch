@@ -57,7 +57,7 @@ pure function is_elemental()
    is_elemental = .false.
 end function
 
-pure subroutine get_info(argspec, help)
+subroutine get_info(argspec, help)
    type(arg_entry_t), intent(out), allocatable, optional :: argspec(:)
    character(len=:), intent(out), allocatable, optional :: help
 

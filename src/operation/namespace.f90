@@ -25,7 +25,7 @@ end type
 
 contains
 
-pure subroutine namespace_push_value(namespace, key, value, err)
+subroutine namespace_push_value(namespace, key, value, err)
    class(namespace_t), intent(inout) :: namespace
    character(len=*), intent(in) :: key
    class(value_t), intent(in) :: value
@@ -37,7 +37,7 @@ pure subroutine namespace_push_value(namespace, key, value, err)
    call namespace_move_value_in(namespace, key, new_value, err)
 end subroutine
 
-pure subroutine namespace_move_value_in(namespace, key, value, err)
+subroutine namespace_move_value_in(namespace, key, value, err)
    class(namespace_t), intent(inout) :: namespace
    character(len=*), intent(in) :: key
    class(value_t), intent(inout), allocatable :: value
@@ -62,7 +62,7 @@ pure subroutine namespace_move_value_in(namespace, key, value, err)
 
 end subroutine
 
-pure subroutine namespace_fetch_value(namespace, key, value, err)
+subroutine namespace_fetch_value(namespace, key, value, err)
    class(namespace_t), intent(in) :: namespace
    character(len=*), intent(in) :: key
    class(value_t), allocatable, intent(inout) :: value
@@ -84,7 +84,7 @@ pure subroutine namespace_fetch_value(namespace, key, value, err)
 
 end subroutine
 
-pure subroutine namespace_fetch_ptr(namespace, key, ptr, err)
+subroutine namespace_fetch_ptr(namespace, key, ptr, err)
    !! Fetches pointer to value of item contained in a namespace.
    class(namespace_t), intent(inout), target :: namespace
    !! Namespace - must be target!
