@@ -16,6 +16,7 @@ contains
    procedure :: trace => trace_generic
    procedure :: exec_trace
    procedure, nopass :: is_elemental
+   procedure, nopass :: is_parallel
    procedure(opname_proto), nopass, deferred :: name
    procedure, nopass :: get_info
 end type operation_t
@@ -115,9 +116,11 @@ recursive subroutine exec_trace(op, inputs, output, err)
    type(err_t), intent(inout) :: err !! error
 
    type(value_ref_t) :: temp_inputs(size(inputs))
+   type(sequence_value_t), allocatable :: sequence_output
    integer :: sequence_lengths(size(inputs))
    integer :: input_index, sequence_index, sequence_length, num_inputs
    integer :: i
+   logical :: abort, run_parallel
 
    num_inputs = size(inputs)
    sequence_lengths = argument_sequence_lengths(inputs)
@@ -144,27 +147,44 @@ recursive subroutine exec_trace(op, inputs, output, err)
       return
    end if
 
-
-
    ! iteratre through arguments, and for sequence items recursively substitute
 
-   allocate(sequence_value_t :: output)
-   select type (sequence_output => output)
-   type is (sequence_value_t)
+   allocate(sequence_output)
+   allocate(sequence_output%items(sequence_length))
+   sequence_output % trace = op % trace([(inputs(i) % get_trace(), i = 1, num_inputs)])
 
-      allocate(sequence_output%items(sequence_length))
-      sequence_output % trace = op % trace([(inputs(i) % get_trace(), i = 1, num_inputs)])
+   run_parallel = op % is_parallel()
+   
+   abort = .false.
+   !$omp parallel do private(sequence_index, temp_inputs, err) if(run_parallel)
+   do sequence_index = 1, sequence_length
+      if (abort) cycle
+      call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+      associate (output_item => sequence_output%items(sequence_index))
+         call op % exec_one(temp_inputs, output_item%value, err)
+         if (check(err)) then
+            ! return
+            abort = .true.; cycle
+         end if
 
-      do sequence_index = 1, sequence_length
-         call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
-         associate (output_item => sequence_output%items(sequence_index))
-            call exec_trace(op, temp_inputs, output_item%value, err)
-            if (check(err)) return 
-            write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-               output_item % get_trace(), ' ---> ',  output_item%value%to_str()
-         end associate
-      end do
-   end select
+         if (.not. allocated(output_item%value)) then
+            call seterr( err, "operation did not yield any output: " // trim(op%name()) )
+            ! return
+            abort = .true.; cycle
+         end if
+
+         output_item % value % trace = op % trace([(temp_inputs(i) % get_trace(), i = 1, num_inputs)])
+
+         ! call exec_trace(op, temp_inputs, output_item%value, err)
+         ! if (check(err)) return 
+
+         write (debug_output, *) ' sequence item ', sequence_index, ' ', &
+            output_item % get_trace(), ' ---> ',  output_item%value%to_str()
+      end associate
+   end do
+   !$omp end parallel do
+   ! if (abort) return
+   call move_alloc(sequence_output, output)
 
 end subroutine exec_trace
 
@@ -200,7 +220,15 @@ pure function is_elemental()
    logical :: is_elemental
 
    is_elemental = .true.
-end function is_elemental
+end function
+
+pure function is_parallel()
+   !! return true if the operation should be performed
+   !! parallel
+   logical :: is_parallel
+
+   is_parallel = .true.
+end function
 
 subroutine get_info(argspec, help)
    type(arg_entry_t), intent(out), allocatable, optional :: argspec(:)
