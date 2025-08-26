@@ -98,6 +98,7 @@ subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
       class default
          temp_inputs(input_index) % value => input_val
       end select
+      nullify(temp_inputs(input_index) % item)
    end do
 end subroutine make_sequential_input_vector
 
@@ -138,8 +139,12 @@ recursive subroutine exec_trace(op, inputs, output, err)
 
    ! by this point we have at least one sequence
 
-   if (.not. sequence_lengths_are_correct(sequence_lengths)) &
-      error stop "sequence parameters must all be equal length or scalars"
+   if (.not. sequence_lengths_are_correct(sequence_lengths)) then
+      call seterr(err, "sequence parameters must all be equal length or scalars")
+      return
+   end if
+
+
 
    ! iteratre through arguments, and for sequence items recursively substitute
 
