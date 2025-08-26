@@ -11,6 +11,7 @@ contains
    procedure, nopass :: name => mkseq_name
    procedure :: exec_one => exec_mkseq
    procedure :: trace => trace_mkseq
+   procedure, nopass :: is_elemental
 end type
 
 contains
@@ -58,5 +59,13 @@ pure function mkseq_name()
 
    mkseq_name = "array"
 end function
+
+pure function is_elemental()
+   !! return true if the operation should be performed
+   !! element-wise on the sequences
+   logical :: is_elemental
+
+   is_elemental = .false.
+end function is_elemental
 
 end module
