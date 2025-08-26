@@ -16,7 +16,7 @@ type, extends(generator_t) :: op_generator_t
    type(op_generator_t_arg_t), allocatable :: args(:)
    type(argument_match_t), allocatable :: arg_match(:)
    class(operation_t), allocatable :: op
-   class(value_t), allocatable :: result
+   type(value_item_t) :: result
 contains
    procedure :: yield
    procedure :: yield_ref
@@ -66,10 +66,11 @@ recursive subroutine yield_ref(gen, ref, err)
    type(value_ref_t), intent(out) :: ref
    type(err_t), intent(inout), optional :: err
 
-   call yield(gen, gen % result, err)
+   call yield(gen, gen % result % value, err)
    if (check(err)) return
 
-   ref = protect(gen % result)
+   ref = protect(gen % result % value)
+   ref % item => gen % result
 
 end subroutine yield_ref
 
@@ -99,7 +100,7 @@ end function
 impure elemental subroutine cleanup(gen)
    class(op_generator_t), intent(inout) :: gen
 
-   if (allocated(gen % result)) deallocate(gen % result)
+   if (allocated(gen % result % value)) deallocate(gen % result % value)
 end subroutine
 
 end module

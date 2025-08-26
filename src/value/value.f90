@@ -39,6 +39,7 @@ public :: value_item_t
 
 type :: value_ref_t
    class(value_t), pointer :: value => null()
+   type(value_item_t), pointer :: item => null()
    integer, pointer, private :: refcounter => null()
    logical, private :: protect = .false.
 contains
