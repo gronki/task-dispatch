@@ -5,18 +5,21 @@ use sequence_value_m
 use operation_m
 use error_m
 implicit none (type, external)
+private
 
 type, extends(operation_t) :: op_mkseq_t
 contains
-   procedure, nopass :: name => mkseq_name
-   procedure :: exec_one => exec_mkseq
-   procedure :: trace => trace_mkseq
+   procedure, nopass :: name
+   procedure :: exec_one
+   procedure :: trace
    procedure, nopass :: is_elemental
 end type
 
+public :: op_mkseq_t
+
 contains
 
-subroutine exec_mkseq(op, inputs, output, err)
+subroutine exec_one(op, inputs, output, err)
    class(op_mkseq_t), intent(in) :: op !! operation
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
    class(value_t), intent(out), allocatable :: output !! output/result
@@ -31,7 +34,7 @@ subroutine exec_mkseq(op, inputs, output, err)
 
 end subroutine
 
-function trace_mkseq(op, input_traces) result(output_trace)
+function trace(op, input_traces) result(output_trace)
    !! Produces a generic trace for any operation following
    !! the pattern: opname(trace_arg1, trace_arg2, ...)
    !> operation
@@ -54,10 +57,10 @@ function trace_mkseq(op, input_traces) result(output_trace)
    end do
 end function
 
-pure function mkseq_name()
-   character(len=32) :: mkseq_name
+pure function name()
+   character(len=32) :: name
 
-   mkseq_name = "array"
+   name = "array"
 end function
 
 pure function is_elemental()

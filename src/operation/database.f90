@@ -31,12 +31,14 @@ contains
 
 subroutine operation_db_init(operation_db)
    use operation_mksequence_m
+   use operation_zip_m
    use operation_item_m
    use operation_trace_m
 
    type(operation_db_t), intent(inout) :: operation_db !! operation catalog
 
    call add_operation(operation_db, op_mkseq_t())
+   call add_operation(operation_db, op_zip_t())
    call add_operation(operation_db, op_item_t())
    call add_operation(operation_db, op_trace_t())
 end subroutine
