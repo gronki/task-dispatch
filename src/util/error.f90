@@ -1,6 +1,7 @@
 module error_m
 
 implicit none (type, external)
+private
 
 type err_messg_line_t
    character(len=512) :: text = ""
@@ -16,15 +17,14 @@ end type
 
 interface seterr
 module procedure seterr_string
+module procedure seterr_err
 end interface
-
-private :: seterr_string
 
 interface clear
 module procedure clear_err
 end interface
 
-private :: clear_err
+public :: err_t, check, seterr, clear
 
 contains
 
@@ -43,15 +43,15 @@ pure function check(err)
 end function
 
 pure subroutine seterr_string(err, message)
-   class(err_t), intent(inout), optional :: err
+   type(err_t), intent(inout), optional :: err
    character(len=*), intent(in) :: message
    type(err_messg_line_t), allocatable :: new_messages(:)
 
-   if (.not. present(err)) &
-      error stop "unhandled error: " // message
+   if (.not. present(err)) then
+      error stop "execution stopped due to the unhandled error: " // message
+   end if
 
-
-   err %num_errors = err%num_errors+1
+   err % num_errors = err % num_errors+1
 
    allocate(new_messages(err%num_errors))
    new_messages(1)%text = message
@@ -59,6 +59,28 @@ pure subroutine seterr_string(err, message)
       new_messages(2:)%text=err%messages%text
    end if
    call move_alloc(from=new_messages, to=err%messages)
+end subroutine
+
+pure subroutine seterr_err(err, other)
+   type(err_t), intent(inout), optional :: err
+   type(err_t), intent(in) :: other
+   character(len=4098) :: errprint
+   type(err_messg_line_t), allocatable :: new_messages(:)
+
+   if (.not. present(err)) then
+      write (errprint, *) other
+      error stop "execution stopped due to the unhandled error: " // trim(errprint)
+   end if
+
+   allocate(new_messages(err%num_errors+other%num_errors))
+   if (other%num_errors > 0) then
+      new_messages(1 : other%num_errors) = other % messages(:)
+   end if
+   if (err%num_errors > 0) then
+      new_messages(other%num_errors + 1 : ) = err % messages(:)
+   end if
+   call move_alloc(from=new_messages, to=err%messages)
+   err % num_errors = err%num_errors+other%num_errors
 end subroutine
 
 pure subroutine clear_err(err)
