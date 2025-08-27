@@ -143,7 +143,8 @@ jobs:
           echo "deb [signed-by=/etc/apt/trusted.gpg.d/llvm.asc] http://apt.llvm.org/noble/ llvm-toolchain-noble-${{ matrix.llvm-ver }} main" \
             | sudo tee /etc/apt/sources.list.d/llvm.list >/dev/null
           sudo apt-get update
-          sudo apt-get install -y clang-${{ matrix.llvm-ver }} flang-${{ matrix.llvm-ver }}
+          sudo apt-get install -y clang-${{ matrix.llvm-ver }} flang-${{ matrix.llvm-ver }} \
+            libomp-${{ matrix.llvm-ver }}-dev
           echo "FPM_FC=flang-new-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
           echo "FPM_CC=clang-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
           echo "FPM_CXX=clang-${{ matrix.llvm-ver }}" >> $GITHUB_ENV
