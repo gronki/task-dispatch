@@ -183,7 +183,6 @@ recursive subroutine exec_trace(op, inputs, output, err)
       end if
 
       !$omp critical
-      output_item_value % trace = op % trace([(temp_inputs(i) % get_trace(), i = 1, num_inputs)])
       write (debug_output, *) ' sequence item ', sequence_index, ' ', &
          output_item_value % get_trace(), ' ---> ',  output_item_value%to_str()
       call move_alloc(output_item_value, sequence_output_items(sequence_index)%value)
@@ -191,6 +190,14 @@ recursive subroutine exec_trace(op, inputs, output, err)
 
    end do
    !$omp end parallel do
+
+   if (check(err)) return
+
+   do sequence_index = 1, sequence_length
+      call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
+      sequence_output_items(sequence_index) % value % trace &
+         = op % trace([(temp_inputs(i) % get_trace(), i = 1, num_inputs)])
+   end do
 
    call move_alloc(sequence_output_items, sequence_output % items)
    call move_alloc(sequence_output, output)
