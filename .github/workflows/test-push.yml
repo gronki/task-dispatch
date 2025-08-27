@@ -35,10 +35,24 @@ jobs:
           gfortran-${{ matrix.gcc-ver }} -g -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
-        run: ./fpm test --profile debug --flag '-ffree-line-length-none'
+        run: |
+          ./fpm clean -all
+          ./fpm test --profile debug --flag '-ffree-line-length-none'
 
       - name: Run tests (release)
-        run: ./fpm test --profile release --flag '-g -ffree-line-length-none'
+        run: |
+          ./fpm clean -all
+          ./fpm test --profile release --flag '-g -ffree-line-length-none'
+
+      - name: Run tests with OpenMP (debug)
+        run: |
+          ./fpm clean -all
+          ./fpm test --profile debug --flag '-ffree-line-length-none -fopenmp'
+
+      - name: Run tests with OpenMP (release)
+        run: |
+          ./fpm clean -all
+          ./fpm test --profile release --flag '-g -fbacktrace -ffree-line-length-none -fopenmp'
 
   oneapi:
     runs-on: ubuntu-24.04
@@ -78,12 +92,26 @@ jobs:
       - name: Run tests (debug)
         run: |
           source /opt/intel/oneapi/setvars.sh
+          ./fpm clean -all
           ./fpm test --profile debug
 
       - name: Run tests (release)
         run: |
           source /opt/intel/oneapi/setvars.sh
+          ./fpm clean -all
           ./fpm test --profile release --flag -g
+
+      - name: Run tests with OpenMP (debug)
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          ./fpm clean -all
+          ./fpm test --profile debug --flag '-qopenmp'
+
+      - name: Run tests with OpenMP (release)
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          ./fpm clean -all
+          ./fpm test --profile release --flag '-g -qopenmp'
 
   flang:
     runs-on: ubuntu-24.04
@@ -126,7 +154,21 @@ jobs:
           gfortran -g -O0 fpm.F90 -o fpm
 
       - name: Run tests (debug)
-        run: ./fpm test --flag '-g -O0'
+        run: |
+          ./fpm clean -all
+          ./fpm test --flag '-g -O0'
 
       - name: Run tests (release)
-        run: ./fpm test --flag '-g -O3'
+        run: |
+          ./fpm clean -all
+          ./fpm test --flag '-g -O3'
+
+      - name: Run tests with OpenMP (debug)
+        run: |
+          ./fpm clean -all
+          ./fpm test --flag '-g -O0 -fopenmp'
+
+      - name: Run tests with OpenMP (release)
+        run: |
+          ./fpm clean -all
+          ./fpm test --flag '-g -O3 -fopenmp'

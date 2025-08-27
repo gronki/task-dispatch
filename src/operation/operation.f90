@@ -121,6 +121,9 @@ recursive subroutine exec_trace(op, inputs, output, err)
    integer :: input_index, sequence_index, sequence_length, num_inputs
    integer :: i
    logical :: abort, run_parallel
+   type(err_t) :: item_err
+   type(value_item_t), allocatable :: sequence_output_items(:)
+   class(value_t), allocatable :: output_item_value
 
    num_inputs = size(inputs)
    sequence_lengths = argument_sequence_lengths(inputs)
@@ -150,40 +153,46 @@ recursive subroutine exec_trace(op, inputs, output, err)
    ! iteratre through arguments, and for sequence items recursively substitute
 
    allocate(sequence_output)
-   allocate(sequence_output%items(sequence_length))
+   allocate(sequence_output_items(sequence_length))
    sequence_output % trace = op % trace([(inputs(i) % get_trace(), i = 1, num_inputs)])
 
    run_parallel = op % is_parallel()
-   
    abort = .false.
-   !$omp parallel do private(sequence_index, temp_inputs, err) if(run_parallel)
+
+   !$omp parallel do default(none) shared(inputs, sequence_output_items, sequence_length, err, op, num_inputs, abort) private(temp_inputs, output_item_value) firstprivate(item_err) if(run_parallel)
    do sequence_index = 1, sequence_length
       if (abort) cycle
+
       call make_sequential_input_vector(inputs, sequence_index, temp_inputs)
-      associate (output_item => sequence_output%items(sequence_index))
-         call op % exec_one(temp_inputs, output_item%value, err)
-         if (check(err)) then
-            ! return
-            abort = .true.; cycle
-         end if
+      call op % exec_one(temp_inputs, output_item_value, item_err)
 
-         if (.not. allocated(output_item%value)) then
-            call seterr( err, "operation did not yield any output: " // trim(op%name()) )
-            ! return
-            abort = .true.; cycle
-         end if
+      if (check(item_err)) then
+         !$omp critical
+         call seterr(err, item_err)
+         abort = .true.
+         !$omp end critical
+         cycle
+      end if
 
-         output_item % value % trace = op % trace([(temp_inputs(i) % get_trace(), i = 1, num_inputs)])
+      if (.not. allocated(output_item_value)) then
+         !$omp critical
+         call seterr( err, "operation did not yield any output: " // trim(op%name()) )
+         abort = .true.
+         !$omp end critical
+         cycle
+      end if
 
-         ! call exec_trace(op, temp_inputs, output_item%value, err)
-         ! if (check(err)) return 
+      !$omp critical
+      output_item_value % trace = op % trace([(temp_inputs(i) % get_trace(), i = 1, num_inputs)])
+      write (debug_output, *) ' sequence item ', sequence_index, ' ', &
+         output_item_value % get_trace(), ' ---> ',  output_item_value%to_str()
+      call move_alloc(output_item_value, sequence_output_items(sequence_index)%value)
+      !$omp end critical
 
-         write (debug_output, *) ' sequence item ', sequence_index, ' ', &
-            output_item % get_trace(), ' ---> ',  output_item%value%to_str()
-      end associate
    end do
    !$omp end parallel do
-   ! if (abort) return
+
+   call move_alloc(sequence_output_items, sequence_output % items)
    call move_alloc(sequence_output, output)
 
 end subroutine exec_trace
