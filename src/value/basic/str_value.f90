@@ -49,10 +49,11 @@ pure function str_value_to_str(value) result(str)
    str = """"""
 end function
 
-subroutine parse_str(from, to, err)
+subroutine parse_str(from, to, err, errmsg)
    class(value_t), intent(in) :: from
    character(len=:), allocatable, intent(inout) :: to
-   type(err_t), intent(inout), optional :: err
+   type(err_t), intent(out), optional :: err
+   character(len=*), intent(in), optional :: errmsg
 
    select type(from)
    class is (str_value_t)
@@ -60,7 +61,11 @@ subroutine parse_str(from, to, err)
       return
    end select
 
-   call seterr( err, "expected string but got: " // from % to_str() )
+   if (present(errmsg)) then
+      call seterr( err, errmsg )
+   else
+      call seterr( err, "expected string but got: " // from % to_str() )
+   end if
 end subroutine
 
 end module
