@@ -220,8 +220,8 @@ function trace_generic(op, input_traces) result(output_trace)
    num_inputs = size(input_traces)
 
    ! TODO: with Fortran 2023 standard, the variable can be automatically allocated
-   write (buf, '(a, *(a))') "@" // trim(op % name()) // "{", &
-      ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", "} ", i < num_inputs))), &
+   write (buf, '(a, *(a))') trim(op % name()) // "(", &
+      ( trim(input_traces(i)%str) // adjustl(trim(merge(" ,", ") ", i < num_inputs))), &
       i = 1, num_inputs )
 
    ! TODO: update to print prettier traces when argspec is present

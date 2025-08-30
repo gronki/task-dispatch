@@ -45,7 +45,7 @@ elemental function sequence_get_trace(value) result(trace)
       return
    end if
 
-   trace%str = "["
+   trace%str = "array("
 
    if (allocated(value%items)) then
       do i =1, size(value%items)
@@ -55,7 +55,7 @@ elemental function sequence_get_trace(value) result(trace)
       end do
    end if
 
-   trace%str = trace%str // "]"
+   trace%str = trace%str // ")"
 
 end function
 
