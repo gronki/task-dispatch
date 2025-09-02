@@ -190,18 +190,19 @@ subroutine tokenize_into_array(line, tok_array, err)
    type(err_t), intent(out), optional :: err !! optional error output
 
    type(tokenizer_t) :: tokenizer
+   type(token_t), allocatable :: tokens(:)
    integer :: i
    INTEGER, PARAMETER :: TOKEN_ARRAY_MAX_SIZE = 4096
 
    tokenizer = tokenizer_t(line)
-   allocate(tok_array%tokens(TOKEN_ARRAY_MAX_SIZE))
+   allocate(tokens(TOKEN_ARRAY_MAX_SIZE))
 
-   do i = 1, size(tok_array%tokens)
-      associate (token => tok_array%tokens(i))
+   do i = 1, size(tokens)
+      associate (token => tokens(i))
          call next_token(tokenizer, token, err)
          if (check(err)) return
          if (token%type == token_end) then
-            tok_array%tokens = tok_array%tokens(:i)
+            tok_array%tokens = tokens(:i)
             return
          end if
       end associate
