@@ -120,7 +120,9 @@ pure function to_str(value) result(str)
    class(value_t), intent(in) :: value
    character(len=:), allocatable :: str
 
+   str = ""
    error stop "no string representation for this value type. override to_str to implement"
+
 end function
 
 pure function get_trace_safe_ref(value_ref) result(trace)
@@ -227,7 +229,7 @@ impure elemental function protect(init_val) result(ref)
 end function
 
 
-impure elemental subroutine free(ref)
+impure recursive elemental subroutine free(ref)
    type(value_ref_t), intent(inout) :: ref
 
    if ( ref % protect ) return

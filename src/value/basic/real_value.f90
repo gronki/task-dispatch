@@ -31,7 +31,6 @@ elemental function real_value_from_real(value, trace) result(value_obj)
    real(f64), intent(in) :: value
    type(value_trace_t), intent(in), optional :: trace
    type(real_value_t) :: value_obj
-   character(len=64) :: buf
 
    value_obj % value = value
 

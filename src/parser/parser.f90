@@ -15,7 +15,6 @@ recursive subroutine parse_function_argument(tokens, expr, kw, err)
    type(tok_array_t), intent(inout) :: tokens
    type(ast_expression_t), intent(out) :: expr
    type(input_key_t), intent(out) :: kw
-   type(ast_expression_t) :: child_expr
    type(token_t) :: token1, token2
    character(len=:), allocatable :: label_name
    type(err_t), intent(out), optional :: err !! error object
@@ -44,7 +43,6 @@ recursive subroutine parse_expression(tokens, expr, err)
    type(ast_expression_t) :: child_expr
    type(token_t) :: token
    type(err_t), intent(out), optional :: err
-   integer :: pivot
 
    call parse_recursive(tokens, expr, err)
    if ( check(err) ) return

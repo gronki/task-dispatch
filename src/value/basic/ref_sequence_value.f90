@@ -20,7 +20,6 @@ contains
 
 pure function sequence_to_str(value) result(str)
    class(ref_sequence_value_t), intent(in) :: value
-   character(len=64) :: buf
    character(len=:), allocatable :: str
 
    integer :: i

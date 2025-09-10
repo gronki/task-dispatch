@@ -76,7 +76,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
       & arg_entry_t(pos=1, name="arg1"), &
@@ -160,7 +159,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
       & arg_entry_t(pos=1, name="arg1", default=real_value_t(value=11.0_real_k)), &
@@ -193,7 +191,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
       & arg_entry_t(pos=1, name="arg1"), &
@@ -225,7 +222,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
       & arg_entry_t(pos=1, name="arg1"), &
@@ -257,7 +253,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       argspec = [ &
       & arg_entry_t(pos=1, name="arg1") ]
@@ -287,7 +282,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       allocate(argspec(0))
       allocate(actual_keys(0))
@@ -314,7 +308,6 @@ program test_input_args
       type(input_key_t), allocatable :: actual_keys(:)
       type(value_item_t), allocatable, target :: actual_args(:)
       type(err_t) :: err
-      type(value_ref_t), allocatable :: actual_args_refs(:)
 
       allocate(argspec(0))
 

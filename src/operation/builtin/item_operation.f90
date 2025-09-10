@@ -28,7 +28,6 @@ subroutine exec_item(op, inputs, output, err)
 
    integer, allocatable :: indices(:)
    integer :: index_depth, i
-   real(kind=real_k) :: index_real
 
    if (size(inputs) < 1) then
       call seterr( err, "item expects at least one argument" )

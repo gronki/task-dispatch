@@ -77,9 +77,7 @@ subroutine token_loc_write_fmt(loc,unit,iotype,v_list,iostat,iomsg)
    integer, intent(in) :: v_list(:)
    integer, intent(out) :: iostat
    character(len=*), intent(inout) :: iomsg
-   character(len=80) :: buffer
-   integer :: i
-   character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,x,a1,i3.3,a1)'
+   character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,1x,a1,i3.3,a1)'
 
    write(unit, fmt=token_loc_fmt, iostat=iostat, iomsg=iomsg) &
       "L", max(loc%line, 0), "C", max(loc%offset, 0), ":"
@@ -97,7 +95,7 @@ subroutine token_loc_read_fmt(loc,unit,iotype,v_list,iostat,iomsg)
    character(len=*), intent(inout) :: iomsg
    character(len=80) :: buffer
    integer :: i
-   character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,x,a1,i3.3,x)'
+   character(len=*), parameter :: token_loc_fmt = '(a1,i5.5,1x,a1,i3.3,x)'
 
    character(len=1) :: read_l, read_c
 

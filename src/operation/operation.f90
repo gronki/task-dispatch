@@ -87,7 +87,6 @@ subroutine make_sequential_input_vector(inputs, sequence_index, temp_inputs)
    type(value_ref_t), intent(in) :: inputs(:) !! operation inputs
    type(value_ref_t), intent(inout) :: temp_inputs(:) !! operation inputs
    integer, intent(in) :: sequence_index
-   logical :: is_sequence(size(inputs))
    integer :: input_index, num_inputs
 
    num_inputs = size(inputs)

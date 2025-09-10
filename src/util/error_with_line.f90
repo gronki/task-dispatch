@@ -104,7 +104,7 @@ subroutine write_one_error_line(err_w_line, unit, message_text, iostat, iomsg)
    integer, intent(out) :: iostat
    character(len=*), intent(inout) :: iomsg
 
-   integer :: ierr, read_iostat
+   integer :: read_iostat
    type(token_loc_t) :: loc
    character(len=1024) :: message_body
 

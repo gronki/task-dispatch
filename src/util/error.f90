@@ -100,7 +100,6 @@ subroutine error_write_formatted(err,unit,iotype,v_list,iostat,iomsg)
    integer, intent(in) :: v_list(:)
    integer, intent(out) :: iostat
    character(len=*), intent(inout) :: iomsg
-   character(len=80) :: buffer
    integer :: i
 
    if (check(err)) then
