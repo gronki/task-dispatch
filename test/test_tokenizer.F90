@@ -14,7 +14,7 @@ program test_tokenizer
    call test2
    call test3
 
-#   include "assert_macro.h"
+#   include "utils/assert_macro.h"
 
 contains
 

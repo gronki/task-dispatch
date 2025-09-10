@@ -2,7 +2,7 @@ program test_fmt_token_loc
 
    use tokenizer_m
    use test_assert_m
-#   include "assert_macro.h"
+#   include "utils/assert_macro.h"
 
    type(token_loc_t) :: a, b
    character(len=128) :: l, s, iomsg

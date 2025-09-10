@@ -7,7 +7,7 @@ program test_parser
    use real_value_m
    use example_operations_m
    use test_assert_m
-#   include "assert_macro.h"
+#   include "utils/assert_macro.h"
 
    implicit none (type, external)
 

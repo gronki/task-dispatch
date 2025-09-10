@@ -11,7 +11,7 @@ program test_parse_statement
    use error_m
 
    implicit none (type, external)
-#   include "assert_macro.h"
+#   include "utils/assert_macro.h"
 
    print *, '*** TEST_PARSE_STATEMENT ***'
 
