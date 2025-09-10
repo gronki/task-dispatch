@@ -2,6 +2,7 @@ module namespace_m
 
 use value_m
 use error_m
+use yaftree_m
 implicit none (type, external)
 public
 
@@ -15,7 +16,7 @@ integer, parameter :: NAMESPACE_CAPACITY = 4096
 
 type namespace_t
    !! suggestion: always create namespace with pointer/target attribute.
-   type(namespace_item_t) :: items(NAMESPACE_CAPACITY)
+   type(dict_t) :: vars
 contains
    procedure :: push => namespace_push_value
    procedure :: move_in => namespace_move_value_in
@@ -26,7 +27,7 @@ end type
 contains
 
 subroutine namespace_push_value(namespace, key, value, err)
-   class(namespace_t), intent(inout) :: namespace
+   class(namespace_t), intent(inout), target :: namespace
    character(len=*), intent(in) :: key
    class(value_t), intent(in) :: value
    type(err_t), intent(out), optional :: err
@@ -38,27 +39,22 @@ subroutine namespace_push_value(namespace, key, value, err)
 end subroutine
 
 subroutine namespace_move_value_in(namespace, key, value, err)
-   class(namespace_t), intent(inout) :: namespace
+   class(namespace_t), intent(inout), target :: namespace
    character(len=*), intent(in) :: key
    class(value_t), intent(inout), allocatable :: value
    type(err_t), intent(out), optional :: err
+   type(binary_tree_node_t), pointer :: node
 
-   integer :: i
+   type(value_item_t), allocatable :: item
 
-   do i = 1, size(namespace % items)
-      associate (item => namespace % items(i))
-         if ((.not. item % used) .or. (item % used .and. item % name == key)) then
-            if (.not. item % used) then
-               item % name = trim(key)
-               item % used = .true.
-            end if
-            call move_alloc(from=value, to=item % value)
-            return
-         end if
-      end associate
-   end do
+   print *, "pushing key <", key, ">"
 
-   call seterr(err, "namespace full")
+   node => get_node(namespace%vars, key)
+   if (.not. associated(node)) error stop
+
+   allocate(item)
+   call move_alloc( from=value, to=item%value )
+   call move_alloc( from=item, to=node%value )
 
 end subroutine
 
@@ -68,19 +64,14 @@ subroutine namespace_fetch_value(namespace, key, value, err)
    class(value_t), allocatable, intent(inout) :: value
    type(err_t), intent(out), optional :: err
 
-   integer :: i
-
-   do i = 1, size(namespace % items)
-      associate (item => namespace % items(i))
-         if (.not. item % used) cycle
-         if (item % name == key) then
-            value = item%value
-            return
-         end if
-      end associate
-   end do
-
-   call seterr(err, trim(key) // " not found")
+   select type (item => get(namespace%vars, key))
+   type is (value_item_t)
+      value = item % value
+   type is (key_not_found_t)
+      call seterr(err, trim(key) // " not found")
+   class default
+      error stop
+   end select
 
 end subroutine
 
@@ -95,19 +86,14 @@ subroutine namespace_fetch_ptr(namespace, key, ptr, err)
    type(err_t), intent(out), optional :: err
    !! Optional error object
 
-   integer :: i
-
-   do i = 1, size(namespace % items)
-      associate (item => namespace % items(i))
-         if (.not. item % used) cycle
-         if (item % name == key) then
-            ptr => item % value
-            return
-         end if
-      end associate
-   end do
-
-   call seterr(err, trim(key) // " not found")
+   select type (item_ptr => get_ptr(namespace%vars, key))
+   type is (value_item_t)
+      ptr => item_ptr % value
+   type is (key_not_found_t)
+      call seterr(err, trim(key) // " not found")
+   class default
+      error stop
+   end select
 
 end subroutine
 

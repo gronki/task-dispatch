@@ -38,7 +38,7 @@ recursive subroutine build_generator(val_expr, gen, namespace, operation_db, err
    case (ARG_REF)
       block
          class(value_t), pointer :: fetched_ref
-         call namespace % fetch_ptr(val_expr % refname, fetched_ref, err)
+         call namespace % fetch_ptr(trim(val_expr % refname), fetched_ref, err)
          if (check(err)) then
             call seterr(err, "here", loc=val_expr % loc)
             return
