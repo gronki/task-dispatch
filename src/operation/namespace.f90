@@ -49,6 +49,10 @@ subroutine namespace_move_value_in(namespace, key, value, err)
 
    print *, "pushing key <", key, ">"
 
+   if (.not. associated(namespace%vars%hasher)) then
+      namespace%vars%hasher => fnv_hash
+   end if
+
    node => get_node(namespace%vars, key)
    if (.not. associated(node)) error stop
 
@@ -63,6 +67,10 @@ subroutine namespace_fetch_value(namespace, key, value, err)
    character(len=*), intent(in) :: key
    class(value_t), allocatable, intent(inout) :: value
    type(err_t), intent(out), optional :: err
+
+   if (.not. associated(namespace%vars%hasher)) then
+      namespace%vars%hasher => fnv_hash
+   end if
 
    select type (item => get(namespace%vars, key))
    type is (value_item_t)
@@ -85,6 +93,10 @@ subroutine namespace_fetch_ptr(namespace, key, ptr, err)
    !! Pointer to be associated with key value
    type(err_t), intent(out), optional :: err
    !! Optional error object
+
+   if (.not. associated(namespace%vars%hasher)) then
+      namespace%vars%hasher => fnv_hash
+   end if
 
    select type (item_ptr => get_ptr(namespace%vars, key))
    type is (value_item_t)
