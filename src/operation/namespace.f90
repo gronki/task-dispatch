@@ -63,7 +63,7 @@ subroutine namespace_move_value_in(namespace, key, value, err)
 end subroutine
 
 subroutine namespace_fetch_value(namespace, key, value, err)
-   class(namespace_t), intent(in) :: namespace
+   class(namespace_t), intent(inout) :: namespace
    character(len=*), intent(in) :: key
    class(value_t), allocatable, intent(inout) :: value
    type(err_t), intent(out), optional :: err
